@@ -1,12 +1,47 @@
-import Link from "next/link";
+"use client";
 
-const previewLinks = [
-  { href: "/owner/dashboard", label: "Owner dashboard" },
-  { href: "/manager/dashboard", label: "Manager dashboard" },
-  { href: "/staff/today", label: "Staff today" },
-];
+import type { FormEvent } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+type MessageState = {
+  type: "error" | "success";
+  text: string;
+} | null;
 
 export default function LoginPage() {
+  const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<MessageState>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setMessage({ type: "error", text: error.message });
+      setLoading(false);
+      return;
+    }
+
+    setMessage({
+      type: "success",
+      text: "Signed in successfully. Redirecting to the dashboard...",
+    });
+
+    router.replace("/owner/dashboard");
+  }
+
   return (
     <main className="min-h-screen bg-[#f6f1ea] px-4 py-8 text-zinc-950 sm:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md items-center">
@@ -15,21 +50,24 @@ export default function LoginPage() {
             Salon commissions
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-            Sign in for staff and management views
+            Sign in
           </h1>
           <p className="mt-3 text-sm leading-6 text-zinc-600">
-            Authentication wiring comes later. This page is a mobile-first
-            placeholder for the future login flow.
+            Use your email and password to access the app.
           </p>
 
-          <form className="mt-6 space-y-4">
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-zinc-700">
                 Email
               </span>
               <input
                 type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="name@salon.com"
+                autoComplete="email"
+                required
                 className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
               />
             </label>
@@ -40,32 +78,38 @@ export default function LoginPage() {
               </span>
               <input
                 type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
+                required
                 className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
               />
             </label>
 
             <button
-              type="button"
-              className="w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white"
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Authentication coming soon
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
-          <div className="mt-6 border-t border-zinc-200 pt-5">
-            <p className="text-sm font-medium text-zinc-700">Preview routes</p>
-            <div className="mt-3 grid gap-2">
-              {previewLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+          <div className="mt-5 min-h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm leading-6">
+            {message ? (
+              <p
+                className={
+                  message.type === "error" ? "text-red-600" : "text-emerald-700"
+                }
+              >
+                {message.text}
+              </p>
+            ) : (
+              <p className="text-zinc-500">
+                Status messages will appear here.
+              </p>
+            )}
           </div>
         </section>
       </div>

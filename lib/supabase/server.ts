@@ -1,18 +1,33 @@
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-export type SupabaseServerConfig = {
-  url: string;
-  anonKey: string;
-};
+function getSupabaseEnv() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export function getSupabaseServerConfig(): SupabaseServerConfig {
-  return {
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  };
+  if (!url || !anonKey) {
+    throw new Error(
+      "Missing Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    );
+  }
+
+  return { url, anonKey };
 }
 
-export function isSupabaseConfigured(): boolean {
-  return supabaseUrl.length > 0 && supabaseAnonKey.length > 0;
+export async function createSupabaseServerClient() {
+  const { url, anonKey } = getSupabaseEnv();
+  const cookieStore = await cookies();
+
+  return createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookieStore.set(name, value, options);
+        });
+      },
+    },
+  });
 }
