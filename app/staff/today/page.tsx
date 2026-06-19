@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { getCurrentUserProfile } from "@/lib/auth/profile";
 import type { DashboardCard, DashboardSection } from "@/types";
 
 const cards: DashboardCard[] = [
@@ -30,7 +32,13 @@ const sections: DashboardSection[] = [
   },
 ];
 
-export default function StaffTodayPage() {
+export default async function StaffTodayPage() {
+  const { user, profile } = await getCurrentUserProfile();
+
+  if (!user || !profile) {
+    redirect("/login");
+  }
+
   return (
     <AppShell
       role="staff"

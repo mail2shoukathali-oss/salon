@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { UserRole } from "@/types";
 
 type MessageState = {
   type: "error" | "success";
@@ -23,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -34,12 +35,41 @@ export default function LoginPage() {
       return;
     }
 
-    setMessage({
-      type: "success",
-      text: "Signed in successfully. Redirecting to the dashboard...",
-    });
+    const user = data.user ?? (await supabase.auth.getUser()).data.user;
 
-    router.replace("/owner/dashboard");
+    if (!user) {
+      setMessage({
+        type: "error",
+        text: "No profile found. Ask owner/admin to create your staff profile.",
+      });
+      setLoading(false);
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const role = profile?.role as UserRole | undefined;
+
+    if (profileError || !role) {
+      setMessage({
+        type: "error",
+        text: "No profile found. Ask owner/admin to create your staff profile.",
+      });
+      setLoading(false);
+      return;
+    }
+
+    const redirectByRole: Record<UserRole, string> = {
+      owner: "/owner/dashboard",
+      manager: "/manager/dashboard",
+      staff: "/staff/today",
+    };
+
+    router.replace(redirectByRole[role]);
   }
 
   return (
