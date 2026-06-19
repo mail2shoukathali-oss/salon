@@ -4,37 +4,6 @@
 
 create extension if not exists pgcrypto;
 
--- Helper functions keep RLS policies readable and consistent.
-create or replace function public.has_role(required_role text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid()
-      and p.role = required_role
-  );
-$$;
-
-create or replace function public.is_owner_or_manager()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.profiles p
-    where p.id = auth.uid()
-      and p.role in ('owner', 'manager')
-  );
-$$;
-
 -- Staff, managers, and owners live in the same profile table.
 -- Each profile maps 1:1 to auth.users.id.
 create table if not exists public.profiles (
@@ -143,6 +112,38 @@ create table if not exists public.monthly_payouts (
 comment on table public.monthly_payouts is 'Month-end payout records with commission calculations per staff member.';
 comment on column public.monthly_payouts.commission_percentage is 'Staff-specific commission percentage used for the month-end payout.';
 comment on column public.monthly_payouts.final_payable is 'Final payout after deductions and advance deductions.';
+
+-- Helper functions keep RLS policies readable and consistent.
+-- They are defined after the tables so they can safely reference public.profiles.
+create or replace function public.has_role(required_role text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid()
+      and p.role = required_role
+  );
+$$;
+
+create or replace function public.is_owner_or_manager()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid()
+      and p.role in ('owner', 'manager')
+  );
+$$;
 
 -- Indexes for common lookups and filters.
 create index if not exists idx_profiles_role on public.profiles (role);
