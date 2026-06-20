@@ -25,6 +25,8 @@ create table if not exists public.services (
   name text not null,
   description text,
   active boolean not null default true,
+  default_price numeric(10,2) not null default 0 check (default_price >= 0),
+  status text not null default 'active' check (status in ('active', 'inactive')),
   created_at timestamptz not null default now()
 );
 
@@ -150,6 +152,7 @@ $$;
 create index if not exists idx_profiles_role on public.profiles (role);
 create index if not exists idx_profiles_status on public.profiles (status);
 create index if not exists idx_services_active on public.services (active);
+create index if not exists idx_services_status on public.services (status);
 
 create index if not exists idx_service_entries_staff_id on public.service_entries (staff_id);
 create index if not exists idx_service_entries_service_date on public.service_entries (service_date);
@@ -180,7 +183,9 @@ drop policy if exists profiles_manager_select on public.profiles;
 drop policy if exists profiles_self_select on public.profiles;
 
 drop policy if exists services_owner_all on public.services;
-drop policy if exists services_staff_manager_select on public.services;
+drop policy if exists services_select on public.services;
+drop policy if exists services_insert on public.services;
+drop policy if exists services_update on public.services;
 
 drop policy if exists service_entries_owner_all on public.service_entries;
 drop policy if exists service_entries_manager_select on public.service_entries;
@@ -214,17 +219,22 @@ on public.profiles
 for select
 using (id = auth.uid());
 
--- services: operational reference data is readable by staff and managers.
-create policy services_owner_all
-on public.services
-for all
-using (public.has_role('owner'))
-with check (public.has_role('owner'));
-
-create policy services_staff_manager_select
+-- services: owner and manager can view, create, and update salon services.
+create policy services_select
 on public.services
 for select
-using (public.is_owner_or_manager() or public.has_role('staff'));
+using (public.is_owner_or_manager());
+
+create policy services_insert
+on public.services
+for insert
+with check (public.is_owner_or_manager());
+
+create policy services_update
+on public.services
+for update
+using (public.is_owner_or_manager())
+with check (public.is_owner_or_manager());
 
 -- service_entries: staff can create and read their own entries; managers can review them.
 create policy service_entries_owner_all
