@@ -1,18 +1,32 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
-
-First, run the development server:
+## Local Setup
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+
+## Environment Variables
+
+Set these values in `.env.local`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+## Validation
+
+```bash
+npm run lint
+npm run build
+```
+
+## Business Rule
+
+Commission is calculated only in monthly payouts at month end. Daily closing does not calculate or deduct commission.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
