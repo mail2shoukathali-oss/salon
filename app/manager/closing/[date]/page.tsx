@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { DailyClosingForm, type DailyClosingFormState } from "@/components/DailyClosingForm";
+import Link from "next/link";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { requireManagerAccess } from "@/lib/auth/access";
 import {
@@ -80,6 +81,20 @@ export default async function ManagerClosingDetailPage({
       title={`Closing ${date}`}
       description="Review approved sales and expenses before saving the daily close."
     >
+      <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <p className="text-sm text-zinc-600">
+          Daily closing does not calculate or deduct commission.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href={`/manager/closing/${date}/print`}
+            className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
+          >
+            Print report
+          </Link>
+        </div>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">Approved sales</p>
@@ -138,9 +153,6 @@ export default async function ManagerClosingDetailPage({
       </div>
 
       <div className="mt-4 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <p className="text-sm leading-6 text-zinc-600">
-          Daily closing does not calculate or deduct commission.
-        </p>
         <div className="mt-5">
           <DailyClosingForm
             action={closeDay}

@@ -31,6 +31,7 @@ export type DailyClosingRecord = {
   actual_cash: number;
   cash_difference: number;
   notes: string | null;
+  created_at: string;
 };
 
 export type ManagerClosingSummary = {
@@ -123,7 +124,7 @@ export async function getManagerClosingSnapshot(date: string) {
     supabase
       .from("daily_closings")
       .select(
-        "id, closing_date, manager_id, total_approved_sales, total_expenses, net_balance, cash_total, card_total, online_total, actual_cash, cash_difference, notes",
+        "id, closing_date, manager_id, total_approved_sales, total_expenses, net_balance, cash_total, card_total, online_total, actual_cash, cash_difference, notes, created_at",
       )
       .eq("closing_date", date)
       .maybeSingle(),
