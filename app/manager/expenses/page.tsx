@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
-import { requireManagerAccess } from "@/lib/auth/access";
 import { getManagerTodayDateString } from "@/lib/manager-closing";
 import { getManagerExpenses } from "@/lib/manager-expenses";
 
@@ -41,11 +40,6 @@ export default async function ManagerExpensesPage({
     ? dateParam
     : getManagerTodayDateString();
   const { expenses, totals } = await getManagerExpenses(selectedDate);
-
-  async function noop() {
-    "use server";
-    await requireManagerAccess();
-  }
 
   return (
     <AppShell
@@ -102,7 +96,7 @@ export default async function ManagerExpensesPage({
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-zinc-600">Newest expenses first.</p>
+          <p className="text-sm text-zinc-600">Newest expenses first.</p>
         <Link
           href="/manager/expenses/new"
           className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white"
@@ -154,7 +148,14 @@ export default async function ManagerExpensesPage({
               </div>
             </div>
 
-            <form action={noop} className="mt-4 hidden" />
+            <div className="mt-4">
+              <Link
+                href={`/manager/expenses/${expense.id}/edit`}
+                className="inline-flex rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
+              >
+                Edit
+              </Link>
+            </div>
           </article>
         ))}
       </div>

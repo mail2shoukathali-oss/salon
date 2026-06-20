@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ExpenseRow = {
   id: string;
+  manager_id: string;
   title: string;
   category: string;
   amount: number;
@@ -10,11 +11,15 @@ export type ExpenseRow = {
   notes: string | null;
 };
 
+export type ExpenseDetailRow = ExpenseRow & {
+  created_at: string;
+};
+
 export async function getManagerExpenses(date?: string) {
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("expenses")
-    .select("id, title, category, amount, payment_method, expense_date, notes")
+    .select("id, manager_id, title, category, amount, payment_method, expense_date, notes")
     .order("created_at", { ascending: false });
 
   if (date) {
@@ -38,4 +43,56 @@ export async function getManagerExpenses(date?: string) {
   );
 
   return { expenses, totals };
+}
+
+export async function getManagerExpenseById(expenseId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select(
+      "id, manager_id, title, category, amount, payment_method, expense_date, notes, created_at",
+    )
+    .eq("id", expenseId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? null) as ExpenseDetailRow | null;
+}
+
+export async function updateManagerExpense(
+  expenseId: string,
+  input: {
+    title: string;
+    category: string;
+    amount: number;
+    paymentMethod: "cash" | "card" | "online";
+    expenseDate: string;
+    notes: string | null;
+  },
+) {
+  const supabase = await createSupabaseServerClient();
+  return supabase
+    .from("expenses")
+    .update({
+      title: input.title,
+      category: input.category,
+      amount: input.amount,
+      payment_method: input.paymentMethod,
+      expense_date: input.expenseDate,
+      notes: input.notes,
+    })
+    .eq("id", expenseId);
+}
+
+export async function deleteManagerExpense(expenseId: string) {
+  const supabase = await createSupabaseServerClient();
+  return supabase
+    .from("expenses")
+    .delete()
+    .eq("id", expenseId)
+    .select("id")
+    .maybeSingle();
 }

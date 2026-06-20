@@ -9,13 +9,28 @@ export type ExpenseFormState = {
 type ExpenseFormProps = {
   action: (state: ExpenseFormState, formData: FormData) => Promise<ExpenseFormState>;
   submitLabel: string;
+  defaultTitle?: string;
+  defaultCategory?: string;
+  defaultAmount?: string;
+  defaultPaymentMethod?: "cash" | "card" | "online";
+  defaultExpenseDate?: string;
+  defaultNotes?: string;
 };
 
 const initialState: ExpenseFormState = {
   error: null,
 };
 
-export function ExpenseForm({ action, submitLabel }: ExpenseFormProps) {
+export function ExpenseForm({
+  action,
+  submitLabel,
+  defaultTitle = "",
+  defaultCategory = "",
+  defaultAmount = "",
+  defaultPaymentMethod = "cash",
+  defaultExpenseDate = new Date().toISOString().slice(0, 10),
+  defaultNotes = "",
+}: ExpenseFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
@@ -28,6 +43,7 @@ export function ExpenseForm({ action, submitLabel }: ExpenseFormProps) {
           type="text"
           name="title"
           placeholder="Expense title"
+          defaultValue={defaultTitle}
           required
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
         />
@@ -41,6 +57,7 @@ export function ExpenseForm({ action, submitLabel }: ExpenseFormProps) {
           type="text"
           name="category"
           placeholder="Expense category"
+          defaultValue={defaultCategory}
           required
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
         />
@@ -57,6 +74,7 @@ export function ExpenseForm({ action, submitLabel }: ExpenseFormProps) {
           step="0.01"
           inputMode="decimal"
           placeholder="0.00"
+          defaultValue={defaultAmount}
           required
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
         />
@@ -68,7 +86,7 @@ export function ExpenseForm({ action, submitLabel }: ExpenseFormProps) {
         </span>
         <select
           name="payment_method"
-          defaultValue="cash"
+          defaultValue={defaultPaymentMethod}
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
         >
           <option value="cash">Cash</option>
@@ -84,7 +102,7 @@ export function ExpenseForm({ action, submitLabel }: ExpenseFormProps) {
         <input
           type="date"
           name="expense_date"
-          defaultValue={new Date().toISOString().slice(0, 10)}
+          defaultValue={defaultExpenseDate}
           required
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
         />
@@ -98,6 +116,7 @@ export function ExpenseForm({ action, submitLabel }: ExpenseFormProps) {
           name="notes"
           rows={4}
           placeholder="Optional"
+          defaultValue={defaultNotes}
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
         />
       </label>
