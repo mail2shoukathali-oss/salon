@@ -25,7 +25,12 @@ export async function createSupabaseServerClient() {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
+          try {
+            // Server Components can read cookies but may not write them; ignore writes there.
+            cookieStore.set(name, value, options);
+          } catch {
+            // No-op: Supabase may try to refresh auth cookies from a Server Component.
+          }
         });
       },
     },
