@@ -11,18 +11,24 @@ const roleLabels: Record<UserRole, string> = {
 const navigation: Record<UserRole, ShellNavItem[]> = {
   owner: [
     { href: "/owner/dashboard", label: "Dashboard" },
-    { href: "/manager/dashboard", label: "Manager" },
+    { href: "/owner/staff", label: "Staff" },
+    { href: "/manager/entries", label: "Entries" },
+    { href: "/manager/expenses", label: "Expenses" },
+    { href: "/manager/closing", label: "Closing" },
+    { href: "/owner/payouts", label: "Payouts" },
     { href: "/staff/today", label: "Today" },
   ],
   manager: [
     { href: "/manager/dashboard", label: "Dashboard" },
+    { href: "/manager/entries", label: "Entries" },
+    { href: "/manager/expenses", label: "Expenses" },
+    { href: "/manager/closing", label: "Closing" },
+    { href: "/owner/payouts", label: "Payouts" },
     { href: "/staff/today", label: "Today" },
-    { href: "/login", label: "Login" },
   ],
   staff: [
     { href: "/staff/today", label: "Today" },
-    { href: "/manager/dashboard", label: "Manager" },
-    { href: "/login", label: "Login" },
+    { href: "/staff/add-service", label: "Add Service" },
   ],
 };
 
@@ -57,7 +63,7 @@ export function AppShell({ role, title, description, children }: AppShellProps) 
           </div>
         </header>
 
-        <nav className="mt-4 grid grid-cols-3 gap-2">
+        <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {navigation[role].map((item) => (
             <Link
               key={item.href}
