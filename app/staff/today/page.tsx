@@ -118,7 +118,7 @@ export default async function StaffTodayPage() {
       <div className="mt-4 grid gap-4">
         {entries.length === 0 ? (
           <div className="rounded-3xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-            No service entries for today yet.
+            No service entries recorded for today yet.
           </div>
         ) : null}
 

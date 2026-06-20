@@ -134,7 +134,7 @@ export default async function StaffMonthlyPage({
         <div className="mt-4 grid gap-4">
           {data.entries.filter((entry) => entry.status === "approved").length === 0 ? (
             <div className="rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-sm text-zinc-600">
-              No approved entries found for this month.
+              No approved service entries found for this month.
             </div>
           ) : null}
 

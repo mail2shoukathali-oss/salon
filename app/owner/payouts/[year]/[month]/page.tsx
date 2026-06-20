@@ -126,7 +126,7 @@ export default async function OwnerPayoutMonthPage({
       <div className="mt-4 grid gap-4">
         {monthData.payouts.length === 0 ? (
           <div className="rounded-3xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-            No approved sales found for this month.
+            No staff payout records found for this month.
           </div>
         ) : null}
 

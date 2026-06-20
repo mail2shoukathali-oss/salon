@@ -108,7 +108,7 @@ export default async function ManagerStaffDailyReportPage({
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">Top staff</p>
           <p className="mt-3 text-xl font-semibold tracking-tight">
-            {report.summary.topStaffName || "No data"}
+            {report.summary.topStaffName || "No staff activity yet"}
           </p>
           <p className="mt-1 text-sm text-zinc-600">
             {formatMoney(report.summary.topStaffApprovedSales)}
@@ -127,7 +127,7 @@ export default async function ManagerStaffDailyReportPage({
         <div className="mt-4 grid gap-4">
           {report.staffRows.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-sm text-zinc-600">
-              No service entries found for this date.
+              No staff performance entries found for this date.
             </div>
           ) : null}
 

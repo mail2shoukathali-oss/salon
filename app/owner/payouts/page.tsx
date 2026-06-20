@@ -40,7 +40,7 @@ export default async function OwnerPayoutsPage() {
       <div className="mt-4 grid gap-4">
         {payouts.length === 0 ? (
           <div className="rounded-3xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-            No payout records yet.
+            No payout records found yet.
           </div>
         ) : null}
 

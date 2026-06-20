@@ -148,7 +148,7 @@ export default async function ManagerEntriesPage({
       <div className="mt-4 grid gap-4">
         {entries.length === 0 ? (
           <div className="rounded-3xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-            No service entries found.
+            No service entries found for this date.
           </div>
         ) : null}
 

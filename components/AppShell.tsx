@@ -123,7 +123,7 @@ export function AppShell({ role, title, description, children }: AppShellProps) 
         </header>
 
         {role === "staff" ? (
-          <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <nav className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
             {(navigation[role] as ShellNavItem[]).map((item) => (
               <Link
                 key={item.href}
@@ -135,16 +135,16 @@ export function AppShell({ role, title, description, children }: AppShellProps) 
             ))}
           </nav>
         ) : (
-          <nav className="mt-4 grid gap-4">
+          <nav className="mt-4 grid gap-3 sm:gap-4">
             {(navigation[role] as NavSection[]).map((section) => (
               <section
                 key={section.title}
-                className="rounded-3xl border border-zinc-200 bg-white p-3 shadow-sm"
+                className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm"
               >
                 <p className="px-1 pb-3 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
                   {section.title}
                 </p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
                   {section.items.map((item) => (
                     <Link
                       key={item.href}
@@ -160,7 +160,7 @@ export function AppShell({ role, title, description, children }: AppShellProps) 
           </nav>
         )}
 
-        <div className="mt-3 flex justify-start">
+        <div className="mt-4 flex justify-start sm:mt-5">
           <LogoutButton />
         </div>
 

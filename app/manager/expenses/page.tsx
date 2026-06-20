@@ -96,7 +96,7 @@ export default async function ManagerExpensesPage({
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
-          <p className="text-sm text-zinc-600">Newest expenses first.</p>
+        <p className="text-sm text-zinc-600">Newest expenses first.</p>
         <Link
           href="/manager/expenses/new"
           className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white"
@@ -108,7 +108,7 @@ export default async function ManagerExpensesPage({
       <div className="mt-4 grid gap-4">
         {expenses.length === 0 ? (
           <div className="rounded-3xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-            No expenses found.
+            No expenses found for this date.
           </div>
         ) : null}
 
