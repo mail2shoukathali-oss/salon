@@ -21,6 +21,7 @@ const navigation: Record<UserRole, ShellNavItem[]> = {
   owner: [
     { href: "/owner/dashboard", label: "Dashboard" },
     { href: "/owner/staff", label: "Staff" },
+    { href: "/manager/services", label: "Services" },
     { href: "/manager/entries", label: "Entries" },
     { href: "/manager/expenses", label: "Expenses" },
     { href: "/manager/closing", label: "Closing" },
@@ -30,6 +31,7 @@ const navigation: Record<UserRole, ShellNavItem[]> = {
   ],
   manager: [
     { href: "/manager/dashboard", label: "Dashboard" },
+    { href: "/manager/services", label: "Services" },
     { href: "/manager/entries", label: "Entries" },
     { href: "/manager/expenses", label: "Expenses" },
     { href: "/manager/closing", label: "Closing" },
