@@ -1,5 +1,4 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getManagerTodayDateString } from "@/lib/manager-closing";
 
 type ApprovedEntryRow = {
   staff_id: string;
@@ -41,14 +40,16 @@ export type OwnerDashboardClosing = {
 };
 
 export type OwnerDashboardData = {
-  todayDate: string;
-  todayApprovedSales: number;
-  todayExpenses: number;
-  todayNetBalance: number;
+  selectedDate: string;
+  selectedMonth: string;
+  selectedMonthLabel: string;
+  selectedDayApprovedSales: number;
+  selectedDayExpenses: number;
+  selectedDayNetBalance: number;
   pendingServiceEntriesCount: number;
-  currentMonthApprovedSales: number;
-  currentMonthExpenses: number;
-  todayClosingStatus: "Closed" | "Not closed";
+  selectedMonthApprovedSales: number;
+  selectedMonthExpenses: number;
+  selectedDayClosingStatus: "Closed" | "Not closed";
   recentClosings: OwnerDashboardClosing[];
   topStaffThisMonth: OwnerDashboardTopStaff[];
 };
@@ -57,36 +58,50 @@ function sum(values: number[]) {
   return values.reduce((total, value) => total + value, 0);
 }
 
-function getMonthDateRange(dateString: string) {
-  const [year, month] = dateString.split("-").map(Number);
+function getMonthDateRange(monthString: string) {
+  const [year, month] = monthString.split("-").map(Number);
   const start = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-01`;
   const nextStart = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
   return { start, nextStart };
 }
 
-export async function getOwnerDashboardData(): Promise<OwnerDashboardData> {
+function formatMonthLabel(monthString: string) {
+  const [year, month] = monthString.split("-").map(Number);
+  return new Intl.DateTimeFormat("en", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+export async function getOwnerDashboardData(input: {
+  selectedDate: string;
+  selectedMonth: string;
+}): Promise<OwnerDashboardData> {
   const supabase = await createSupabaseServerClient();
-  const todayDate = getManagerTodayDateString();
   const { start: monthStart, nextStart: nextMonthStart } = getMonthDateRange(
-    todayDate,
+    input.selectedMonth,
   );
 
   const [
-    { data: todayApprovedEntries, error: todayApprovedEntriesError },
-    { data: todayExpenses, error: todayExpensesError },
+    { data: selectedDayApprovedEntries, error: selectedDayApprovedEntriesError },
+    { data: selectedDayExpenses, error: selectedDayExpensesError },
     { count: pendingServiceEntriesCount, error: pendingCountError },
     { data: monthApprovedEntries, error: monthApprovedEntriesError },
     { data: monthExpenses, error: monthExpensesError },
     { data: recentClosingRows, error: recentClosingsError },
-    { data: todayClosingRow, error: todayClosingError },
+    { data: selectedDayClosingRow, error: selectedDayClosingError },
     { data: profileRows, error: profileRowsError },
   ] = await Promise.all([
     supabase
       .from("service_entries")
       .select("amount")
-      .eq("service_date", todayDate)
+      .eq("service_date", input.selectedDate)
       .eq("status", "approved"),
-    supabase.from("expenses").select("amount").eq("expense_date", todayDate),
+    supabase
+      .from("expenses")
+      .select("amount")
+      .eq("expense_date", input.selectedDate),
     supabase
       .from("service_entries")
       .select("id", { count: "exact", head: true })
@@ -114,36 +129,36 @@ export async function getOwnerDashboardData(): Promise<OwnerDashboardData> {
       .select(
         "id, closing_date, total_approved_sales, total_expenses, net_balance, cash_difference",
       )
-      .eq("closing_date", todayDate)
+      .eq("closing_date", input.selectedDate)
       .maybeSingle(),
     supabase.from("profiles").select("id, full_name"),
   ]);
 
-  if (todayApprovedEntriesError) throw todayApprovedEntriesError;
-  if (todayExpensesError) throw todayExpensesError;
+  if (selectedDayApprovedEntriesError) throw selectedDayApprovedEntriesError;
+  if (selectedDayExpensesError) throw selectedDayExpensesError;
   if (pendingCountError) throw pendingCountError;
   if (monthApprovedEntriesError) throw monthApprovedEntriesError;
   if (monthExpensesError) throw monthExpensesError;
   if (recentClosingsError) throw recentClosingsError;
-  if (todayClosingError) throw todayClosingError;
+  if (selectedDayClosingError) throw selectedDayClosingError;
   if (profileRowsError) throw profileRowsError;
 
-  const todayApprovedSales = sum(
-    ((todayApprovedEntries ?? []) as ApprovedEntryRow[]).map((entry) =>
+  const selectedDayApprovedSales = sum(
+    ((selectedDayApprovedEntries ?? []) as ApprovedEntryRow[]).map((entry) =>
       Number(entry.amount),
     ),
   );
-  const todayExpensesTotal = sum(
-    ((todayExpenses ?? []) as ExpenseRow[]).map((expense) =>
+  const selectedDayExpensesTotal = sum(
+    ((selectedDayExpenses ?? []) as ExpenseRow[]).map((expense) =>
       Number(expense.amount),
     ),
   );
-  const currentMonthApprovedSales = sum(
+  const selectedMonthApprovedSales = sum(
     ((monthApprovedEntries ?? []) as ApprovedEntryRow[]).map((entry) =>
       Number(entry.amount),
     ),
   );
-  const currentMonthExpenses = sum(
+  const selectedMonthExpenses = sum(
     ((monthExpenses ?? []) as ExpenseRow[]).map((expense) => Number(expense.amount)),
   );
 
@@ -179,14 +194,16 @@ export async function getOwnerDashboardData(): Promise<OwnerDashboardData> {
     .slice(0, 5);
 
   return {
-    todayDate,
-    todayApprovedSales,
-    todayExpenses: todayExpensesTotal,
-    todayNetBalance: todayApprovedSales - todayExpensesTotal,
+    selectedDate: input.selectedDate,
+    selectedMonth: input.selectedMonth,
+    selectedMonthLabel: formatMonthLabel(input.selectedMonth),
+    selectedDayApprovedSales,
+    selectedDayExpenses: selectedDayExpensesTotal,
+    selectedDayNetBalance: selectedDayApprovedSales - selectedDayExpensesTotal,
     pendingServiceEntriesCount: pendingServiceEntriesCount ?? 0,
-    currentMonthApprovedSales,
-    currentMonthExpenses,
-    todayClosingStatus: todayClosingRow ? "Closed" : "Not closed",
+    selectedMonthApprovedSales,
+    selectedMonthExpenses,
+    selectedDayClosingStatus: selectedDayClosingRow ? "Closed" : "Not closed",
     recentClosings: ((recentClosingRows ?? []) as DailyClosingRow[]).map((row) => ({
       id: row.id,
       closing_date: row.closing_date,

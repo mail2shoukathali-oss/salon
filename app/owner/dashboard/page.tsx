@@ -1,51 +1,79 @@
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { requireOwnerAccess } from "@/lib/auth/access";
+import { getCurrentMonthParts } from "@/lib/owner-payouts";
 import { getOwnerDashboardData } from "@/lib/owner-dashboard";
+import { getManagerTodayDateString } from "@/lib/manager-closing";
 
 function formatMoney(amount: number) {
   return `AED ${amount.toFixed(2)}`;
 }
 
-export default async function OwnerDashboardPage() {
+function isIsoDate(value: string | undefined): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
+function isMonthString(value: string | undefined): value is string {
+  return Boolean(value && /^\d{4}-\d{2}$/.test(value));
+}
+
+function formatDateLabel(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+export default async function OwnerDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string; month?: string }>;
+}) {
   const { profile } = await requireOwnerAccess();
-  const data = await getOwnerDashboardData();
+  const { date: dateParam, month: monthParam } = await searchParams;
+  const todayDate = getManagerTodayDateString();
+  const currentMonth = getCurrentMonthParts();
+  const selectedDate = isIsoDate(dateParam) ? dateParam : todayDate;
+  const selectedMonth = isMonthString(monthParam)
+    ? monthParam
+    : `${String(currentMonth.year).padStart(4, "0")}-${String(currentMonth.month).padStart(2, "0")}`;
+  const data = await getOwnerDashboardData({ selectedDate, selectedMonth });
 
   const cards = [
     {
-      title: "Today approved sales",
-      value: formatMoney(data.todayApprovedSales),
-      description: "Approved sales for today only.",
+      title: "Selected day approved sales",
+      value: formatMoney(data.selectedDayApprovedSales),
+      description: `Approved sales for ${formatDateLabel(data.selectedDate)}.`,
     },
     {
-      title: "Today expenses",
-      value: formatMoney(data.todayExpenses),
-      description: "Operating expenses recorded today.",
+      title: "Selected day expenses",
+      value: formatMoney(data.selectedDayExpenses),
+      description: `Operating expenses recorded on ${formatDateLabel(data.selectedDate)}.`,
     },
     {
-      title: "Today net balance",
-      value: formatMoney(data.todayNetBalance),
-      description: "Today approved sales minus today expenses.",
+      title: "Selected day net balance",
+      value: formatMoney(data.selectedDayNetBalance),
+      description: "Approved sales minus expenses for the selected day.",
     },
     {
       title: "Pending service entries",
       value: String(data.pendingServiceEntriesCount),
-      description: "Service entries waiting for review.",
+      description: "Current pending entries waiting for manager review.",
     },
     {
-      title: "Month approved sales",
-      value: formatMoney(data.currentMonthApprovedSales),
-      description: "Approved sales for the current month.",
+      title: "Selected month approved sales",
+      value: formatMoney(data.selectedMonthApprovedSales),
+      description: `Approved sales for ${data.selectedMonthLabel}.`,
     },
     {
-      title: "Month expenses",
-      value: formatMoney(data.currentMonthExpenses),
-      description: "Expenses recorded in the current month.",
+      title: "Selected month expenses",
+      value: formatMoney(data.selectedMonthExpenses),
+      description: `Expenses recorded in ${data.selectedMonthLabel}.`,
     },
     {
-      title: "Today closing status",
-      value: data.todayClosingStatus,
-      description: "Closed means a daily closing already exists for today.",
+      title: "Selected day closing status",
+      value: data.selectedDayClosingStatus,
+      description: `Open ${formatDateLabel(data.selectedDate)} in daily closing if you need to review it.`,
     },
   ];
 
@@ -53,9 +81,57 @@ export default async function OwnerDashboardPage() {
     <AppShell
       role={profile.role}
       title="Owner dashboard"
-      description="High-level daily operations overview for the full salon."
+      description="Review any selected day and month across salon operations."
     >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <form
+          method="get"
+          className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end"
+        >
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-zinc-700">
+              Day
+            </span>
+            <input
+              type="date"
+              name="date"
+              defaultValue={data.selectedDate}
+              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-zinc-700">
+              Month
+            </span>
+            <input
+              type="month"
+              name="month"
+              defaultValue={data.selectedMonth}
+              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white"
+          >
+            Apply filter
+          </button>
+
+          <Link
+            href="/owner/dashboard"
+            className="rounded-2xl border border-zinc-200 px-4 py-3 text-center text-sm font-medium text-zinc-700"
+          >
+            Today / current month
+          </Link>
+        </form>
+        <p className="mt-3 text-sm text-zinc-600">
+          Showing {formatDateLabel(data.selectedDate)} and {data.selectedMonthLabel}.
+        </p>
+      </section>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
           <article
             key={card.title}
@@ -79,10 +155,10 @@ export default async function OwnerDashboardPage() {
               Recent daily closing
             </h2>
             <Link
-              href={`/manager/closing/${data.todayDate}`}
+              href={`/manager/closing/${data.selectedDate}`}
               className="rounded-full border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700"
             >
-              Open today
+              Open selected day
             </Link>
           </div>
 
@@ -117,13 +193,13 @@ export default async function OwnerDashboardPage() {
 
         <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold tracking-tight">
-            Top staff this month
+            Top staff in {data.selectedMonthLabel}
           </h2>
 
           <div className="mt-4 grid gap-3">
             {data.topStaffThisMonth.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">
-                No approved sales yet this month.
+                No approved sales yet in this month.
               </div>
             ) : (
               data.topStaffThisMonth.map((staff) => (
