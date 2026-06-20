@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, type ChangeEvent } from "react";
+import type { ManagerServiceRow } from "@/lib/manager-services";
 
 export type ServiceEntryFormState = {
   error: string | null;
@@ -9,28 +10,68 @@ export type ServiceEntryFormState = {
 type ServiceEntryFormProps = {
   action: (state: ServiceEntryFormState, formData: FormData) => Promise<ServiceEntryFormState>;
   submitLabel: string;
+  services: ManagerServiceRow[];
+  disabled?: boolean;
+  disabledMessage?: string;
 };
 
 const initialState: ServiceEntryFormState = {
   error: null,
 };
 
-export function ServiceEntryForm({ action, submitLabel }: ServiceEntryFormProps) {
+export function ServiceEntryForm({
+  action,
+  submitLabel,
+  services,
+  disabled = false,
+  disabledMessage,
+}: ServiceEntryFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [selectedServiceId, setSelectedServiceId] = useState(() => services[0]?.id ?? "");
+  const [amount, setAmount] = useState(() =>
+    services[0]?.default_price != null
+      ? String(Number(services[0].default_price).toFixed(2))
+      : "",
+  );
+  const selectedService = services.find((service) => service.id === selectedServiceId) ?? null;
+
+  function handleServiceChange(event: ChangeEvent<HTMLSelectElement>) {
+    const serviceId = event.target.value;
+    setSelectedServiceId(serviceId);
+
+    const service = services.find((item) => item.id === serviceId);
+    if (service) {
+      setAmount(String(Number(service.default_price).toFixed(2)));
+    }
+  }
+
+  const canSubmit = !disabled && !pending && services.length > 0;
 
   return (
     <form className="space-y-4" action={formAction}>
+      <input type="hidden" name="service_name" value={selectedService?.name ?? ""} />
+
       <label className="block">
         <span className="mb-2 block text-sm font-medium text-zinc-700">
-          Service name
+          Service
         </span>
-        <input
-          type="text"
-          name="service_name"
-          placeholder="Service name"
+        <select
+          name="service_id"
+          value={selectedServiceId}
+          onChange={handleServiceChange}
+          disabled={disabled || services.length === 0}
           required
-          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
-        />
+          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
+        >
+          {services.length === 0 ? (
+            <option value="">No active services available</option>
+          ) : null}
+          {services.map((service) => (
+            <option key={service.id} value={service.id}>
+              {service.name} - AED {Number(service.default_price).toFixed(2)}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className="block">
@@ -44,8 +85,11 @@ export function ServiceEntryForm({ action, submitLabel }: ServiceEntryFormProps)
           step="0.01"
           inputMode="decimal"
           placeholder="0.00"
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
           required
-          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+          disabled={disabled || services.length === 0}
+          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
         />
       </label>
 
@@ -56,7 +100,8 @@ export function ServiceEntryForm({ action, submitLabel }: ServiceEntryFormProps)
         <select
           name="payment_method"
           defaultValue="cash"
-          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
+          disabled={disabled || services.length === 0}
+          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
         >
           <option value="cash">Cash</option>
           <option value="card">Card</option>
@@ -72,7 +117,8 @@ export function ServiceEntryForm({ action, submitLabel }: ServiceEntryFormProps)
           type="text"
           name="customer_name"
           placeholder="Optional"
-          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+          disabled={disabled || services.length === 0}
+          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
         />
       </label>
 
@@ -84,7 +130,8 @@ export function ServiceEntryForm({ action, submitLabel }: ServiceEntryFormProps)
           type="tel"
           name="customer_phone"
           placeholder="Optional"
-          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+          disabled={disabled || services.length === 0}
+          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
         />
       </label>
 
@@ -96,23 +143,31 @@ export function ServiceEntryForm({ action, submitLabel }: ServiceEntryFormProps)
           name="notes"
           rows={4}
           placeholder="Optional"
-          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+          disabled={disabled || services.length === 0}
+          className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
         />
       </label>
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={!canSubmit}
         className="w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Saving..." : submitLabel}
       </button>
 
       <div className="min-h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm leading-6">
-        {state.error ? (
+        {services.length === 0 ? (
+          <p className="text-zinc-500">
+            {disabledMessage ||
+              "No active services are available yet. Ask an owner or manager to add one before creating entries."}
+          </p>
+        ) : state.error ? (
           <p className="text-red-600">{state.error}</p>
         ) : (
-          <p className="text-zinc-500">Status messages will appear here.</p>
+          <p className="text-zinc-500">
+            Select a service to fill the default price, then adjust the amount if needed.
+          </p>
         )}
       </div>
     </form>

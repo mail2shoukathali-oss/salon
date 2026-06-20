@@ -24,6 +24,21 @@ export async function getManagerServices() {
   return (data ?? []) as ManagerServiceRow[];
 }
 
+export async function getActiveManagerServices() {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("services")
+    .select("id, name, default_price, status, created_at")
+    .eq("status", "active")
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as ManagerServiceRow[];
+}
+
 export async function createManagerService(input: {
   name: string;
   defaultPrice: number;
