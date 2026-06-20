@@ -17,6 +17,7 @@ const navigation: Record<UserRole, ShellNavItem[]> = {
     { href: "/manager/closing", label: "Closing" },
     { href: "/owner/payouts", label: "Payouts" },
     { href: "/staff/today", label: "Today" },
+    { href: "/logout", label: "Logout" },
   ],
   manager: [
     { href: "/manager/dashboard", label: "Dashboard" },
@@ -25,10 +26,12 @@ const navigation: Record<UserRole, ShellNavItem[]> = {
     { href: "/manager/closing", label: "Closing" },
     { href: "/owner/payouts", label: "Payouts" },
     { href: "/staff/today", label: "Today" },
+    { href: "/logout", label: "Logout" },
   ],
   staff: [
     { href: "/staff/today", label: "Today" },
     { href: "/staff/add-service", label: "Add Service" },
+    { href: "/logout", label: "Logout" },
   ],
 };
 
@@ -68,7 +71,11 @@ export function AppShell({ role, title, description, children }: AppShellProps) 
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:text-zinc-950"
+              className={`rounded-2xl border px-3 py-3 text-center text-sm font-medium shadow-sm transition ${
+                item.href === "/logout"
+                  ? "border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:text-rose-900"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:text-zinc-950"
+              }`}
             >
               {item.label}
             </Link>
