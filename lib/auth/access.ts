@@ -40,3 +40,17 @@ export async function requireManagerAccess() {
 
   return { user, profile };
 }
+
+export async function requireOwnerOrManagerAccess() {
+  const { user, profile } = await getCurrentUserProfile();
+
+  if (!user || !profile) {
+    redirect("/login");
+  }
+
+  if (profile.role === "staff") {
+    redirect(getRoleRedirectPath(profile.role));
+  }
+
+  return { user, profile };
+}
