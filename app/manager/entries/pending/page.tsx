@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { requireManagerAccess } from "@/lib/auth/access";
 import {
   getManagerEntries,
-  updateServiceEntryStatus,
+  approveManagerEntry,
   type ManagerServiceEntry,
 } from "@/lib/manager-entries";
 
@@ -26,10 +27,7 @@ export default async function ManagerPendingEntriesPage() {
 
   const { entries, totals } = await getManagerEntries({ status: "pending" });
 
-  async function setEntryStatus(
-    entryId: string,
-    status: "approved" | "rejected",
-  ) {
+  async function approveEntry(entryId: string) {
     "use server";
 
     const { user: currentUser, profile: currentProfile } =
@@ -39,14 +37,12 @@ export default async function ManagerPendingEntriesPage() {
       redirect("/login");
     }
 
-    const { error } = await updateServiceEntryStatus(
-      entryId,
-      status,
-      currentUser.id,
-    );
-
-    if (error) {
-      throw new Error(error.message);
+    try {
+      await approveManagerEntry(entryId, currentUser.id);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update entry status.";
+      throw new Error(message);
     }
 
     revalidatePath("/manager/entries");
@@ -82,12 +78,12 @@ export default async function ManagerPendingEntriesPage() {
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <p className="text-sm text-zinc-600">Pending entries only.</p>
-        <a
+        <Link
           href="/manager/entries"
           className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
         >
           All entries
-        </a>
+        </Link>
       </div>
 
       <div className="mt-4 grid gap-4">
@@ -135,21 +131,22 @@ export default async function ManagerPendingEntriesPage() {
               </div>
             </div>
 
+            <div className="mt-4">
+              <Link
+                href={`/manager/entries/${entry.id}`}
+                className="inline-flex rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
+              >
+                View details
+              </Link>
+            </div>
+
             <div className="mt-4 flex gap-2">
-              <form action={setEntryStatus.bind(null, entry.id, "approved")}>
+              <form action={approveEntry.bind(null, entry.id)}>
                 <button
                   type="submit"
                   className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white"
                 >
                   Approve
-                </button>
-              </form>
-              <form action={setEntryStatus.bind(null, entry.id, "rejected")}>
-                <button
-                  type="submit"
-                  className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
-                >
-                  Reject
                 </button>
               </form>
             </div>
