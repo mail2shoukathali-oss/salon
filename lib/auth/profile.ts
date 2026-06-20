@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 export type CurrentUserProfile = {
   id: string;
   role: "owner" | "manager" | "staff";
+  status: "active" | "inactive";
   full_name: string | null;
   phone: string | null;
   commission_percentage: number;
@@ -22,7 +23,7 @@ export async function getCurrentUserProfile(): Promise<{
 
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("id, role, full_name, phone, commission_percentage")
+    .select("id, role, status, full_name, phone, commission_percentage")
     .eq("id", userData.user.id)
     .maybeSingle();
 

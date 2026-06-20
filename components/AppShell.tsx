@@ -41,6 +41,7 @@ const navigation: Record<UserRole, ShellNavItem[]> = {
   ],
   staff: [
     { href: "/staff/today", label: "Today" },
+    { href: "/staff/profile", label: "Profile" },
     { href: "/staff/monthly", label: "Monthly" },
     { href: "/staff/add-service", label: "Add Service" },
   ],
