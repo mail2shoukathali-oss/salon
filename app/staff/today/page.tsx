@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
+import { PendingCancelForm } from "@/components/PendingCancelForm";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import {
   formatEntryDateTime,
@@ -52,11 +53,7 @@ export default async function StaffTodayPage() {
       redirect("/staff/today");
     }
 
-    const { error } = await deleteStaffPendingEntry(entryId, currentUser.id);
-
-    if (error) {
-      throw new Error(error.message);
-    }
+    await deleteStaffPendingEntry(entryId, currentUser.id);
 
     revalidatePath("/staff/today");
     redirect("/staff/today");
@@ -187,14 +184,7 @@ export default async function StaffTodayPage() {
                 >
                   Edit
                 </Link>
-                <form action={cancelEntry.bind(null, entry.id)}>
-                  <button
-                    type="submit"
-                    className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 sm:w-auto"
-                  >
-                    Cancel
-                  </button>
-                </form>
+                <PendingCancelForm action={cancelEntry.bind(null, entry.id)} />
               </div>
             ) : null}
           </article>

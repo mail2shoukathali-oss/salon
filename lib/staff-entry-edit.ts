@@ -67,10 +67,21 @@ export async function updateStaffPendingEntry(
 
 export async function deleteStaffPendingEntry(entryId: string, staffId: string) {
   const supabase = await createSupabaseServerClient();
-  return supabase
+  const { data, error } = await supabase
     .from("service_entries")
     .delete()
+    .select("id")
     .eq("id", entryId)
     .eq("staff_id", staffId)
     .eq("status", "pending");
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error("No pending entry was deleted.");
+  }
+
+  return data;
 }
