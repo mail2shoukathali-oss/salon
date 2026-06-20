@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
@@ -102,16 +103,24 @@ export default async function OwnerPayoutMonthPage({
         <p className="text-sm leading-6 text-zinc-600">
           Monthly commission is calculated from approved sales only.
         </p>
-        {isOwner ? (
-          <form action={generateOrUpdatePayouts} className="mt-4">
-            <button
-              type="submit"
-              className="w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white sm:w-auto"
-            >
-              Generate or update payout records
-            </button>
-          </form>
-        ) : null}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href={`/owner/payouts/${year}/${String(month).padStart(2, "0")}/print`}
+            className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
+          >
+            Print statement
+          </Link>
+          {isOwner ? (
+            <form action={generateOrUpdatePayouts}>
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white sm:w-auto"
+              >
+                Generate or update payout records
+              </button>
+            </form>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-4 grid gap-4">
