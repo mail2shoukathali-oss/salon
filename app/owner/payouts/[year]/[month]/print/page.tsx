@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import { requireOwnerOrManagerAccess } from "@/lib/auth/access";
-import { businessSettings } from "@/lib/business-settings";
+import { getBusinessSettings } from "@/lib/business-settings";
 import {
   formatMonthLabel,
   getMonthlyPayoutMonthData,
@@ -46,6 +46,7 @@ export default async function OwnerPayoutPrintPage({
 
   const { year, month } = parsed;
   const monthData = await getMonthlyPayoutMonthData(year, month);
+  const settings = await getBusinessSettings();
   const generatedAt = formatGeneratedAt();
 
   const totals = monthData.payouts.reduce(
@@ -88,7 +89,7 @@ export default async function OwnerPayoutPrintPage({
                 Back to month
               </Link>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-                {businessSettings.payoutStatementTitle}
+                {settings.payoutStatementTitle}
               </h1>
             </div>
 
@@ -97,7 +98,7 @@ export default async function OwnerPayoutPrintPage({
 
           <div className="hidden print:block">
             <h1 className="text-2xl font-semibold tracking-tight">
-              {businessSettings.payoutStatementTitle}
+              {settings.payoutStatementTitle}
             </h1>
           </div>
 
@@ -107,7 +108,7 @@ export default async function OwnerPayoutPrintPage({
                 Company
               </p>
               <p className="mt-1 text-base font-semibold text-zinc-950">
-                {businessSettings.businessName}
+                {settings.businessName}
               </p>
             </div>
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">

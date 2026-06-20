@@ -22,6 +22,7 @@ const navigation: Record<UserRole, ShellNavItem[]> = {
   owner: [
     { href: "/owner/dashboard", label: "Dashboard" },
     { href: "/owner/staff", label: "Staff" },
+    { href: "/owner/settings", label: "Settings" },
     { href: "/manager/services", label: "Services" },
     { href: "/manager/entries", label: "Entries" },
     { href: "/manager/expenses", label: "Expenses" },

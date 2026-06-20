@@ -116,6 +116,47 @@ comment on table public.monthly_payouts is 'Month-end payout records with commis
 comment on column public.monthly_payouts.commission_percentage is 'Staff-specific commission percentage used for the month-end payout.';
 comment on column public.monthly_payouts.final_payable is 'Final payout after deductions and advance deductions.';
 
+-- Singleton business settings used by print pages and owner settings UI.
+create table if not exists public.business_settings (
+  id text primary key default 'main',
+  business_name text not null default 'Nawab Salon',
+  payout_statement_title text not null default 'Monthly Staff Payout Statement',
+  daily_closing_report_title text not null default 'Daily Closing Report',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.business_settings is 'Singleton salon branding settings for print documents and owner customization.';
+
+insert into public.business_settings (
+  id,
+  business_name,
+  payout_statement_title,
+  daily_closing_report_title
+) values (
+  'main',
+  'Nawab Salon',
+  'Monthly Staff Payout Statement',
+  'Daily Closing Report'
+)
+on conflict (id) do nothing;
+
+create or replace function public.set_business_settings_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_business_settings_updated_at on public.business_settings;
+create trigger trg_business_settings_updated_at
+before update on public.business_settings
+for each row
+execute function public.set_business_settings_updated_at();
+
 -- Helper functions keep RLS policies readable and consistent.
 -- They are defined after the tables so they can safely reference public.profiles.
 create or replace function public.has_role(required_role text)
@@ -169,6 +210,8 @@ create index if not exists idx_monthly_payouts_staff_id on public.monthly_payout
 create index if not exists idx_monthly_payouts_month_year on public.monthly_payouts (year, month);
 create index if not exists idx_monthly_payouts_status on public.monthly_payouts (status);
 
+create index if not exists idx_business_settings_updated_at on public.business_settings (updated_at);
+
 -- Enable row level security on every application table.
 alter table public.profiles enable row level security;
 alter table public.services enable row level security;
@@ -176,6 +219,7 @@ alter table public.service_entries enable row level security;
 alter table public.expenses enable row level security;
 alter table public.daily_closings enable row level security;
 alter table public.monthly_payouts enable row level security;
+alter table public.business_settings enable row level security;
 
 -- Remove existing policies first so the file can be re-applied safely.
 drop policy if exists profiles_owner_all on public.profiles;
@@ -202,6 +246,11 @@ drop policy if exists daily_closings_manager_all on public.daily_closings;
 
 drop policy if exists monthly_payouts_owner_all on public.monthly_payouts;
 drop policy if exists monthly_payouts_manager_select on public.monthly_payouts;
+
+drop policy if exists business_settings_owner_select on public.business_settings;
+drop policy if exists business_settings_manager_select on public.business_settings;
+drop policy if exists business_settings_owner_insert on public.business_settings;
+drop policy if exists business_settings_owner_update on public.business_settings;
 
 -- profiles: owners can fully manage all profiles, managers can view staff, and users can view their own profile.
 create policy profiles_owner_all
@@ -308,3 +357,25 @@ create policy monthly_payouts_manager_select
 on public.monthly_payouts
 for select
 using (public.is_owner_or_manager());
+
+-- business_settings: owner can insert/update and owner/manager can select.
+create policy business_settings_owner_select
+on public.business_settings
+for select
+using (public.has_role('owner'));
+
+create policy business_settings_manager_select
+on public.business_settings
+for select
+using (public.is_owner_or_manager());
+
+create policy business_settings_owner_insert
+on public.business_settings
+for insert
+with check (public.has_role('owner'));
+
+create policy business_settings_owner_update
+on public.business_settings
+for update
+using (public.has_role('owner'))
+with check (public.has_role('owner'));

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import { requireOwnerOrManagerAccess } from "@/lib/auth/access";
-import { businessSettings } from "@/lib/business-settings";
+import { getBusinessSettings } from "@/lib/business-settings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   calculateManagerClosingSummary,
@@ -38,6 +38,7 @@ export default async function ManagerClosingPrintPage({
   }
 
   const snapshot = await getManagerClosingSnapshot(date);
+  const settings = await getBusinessSettings();
   const supabase = await createSupabaseServerClient();
   const { data: profileRows } = await supabase.from("profiles").select("id, full_name");
   const profileMap = new Map(
@@ -75,7 +76,7 @@ export default async function ManagerClosingPrintPage({
                 Back to closing
               </Link>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-                Daily Closing Report
+                {settings.dailyClosingReportTitle}
               </h1>
             </div>
             <PrintButton className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white" />
@@ -83,7 +84,7 @@ export default async function ManagerClosingPrintPage({
 
           <div className="hidden print:block">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Daily Closing Report
+              {settings.dailyClosingReportTitle}
             </h1>
           </div>
 
@@ -93,7 +94,7 @@ export default async function ManagerClosingPrintPage({
                 Company
               </p>
               <p className="mt-1 text-base font-semibold text-zinc-950">
-                {businessSettings.businessName}
+                {settings.businessName}
               </p>
             </div>
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
