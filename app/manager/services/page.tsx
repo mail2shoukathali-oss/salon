@@ -39,9 +39,10 @@ export default async function ManagerServicesPage() {
         ) : null}
 
         {services.map((service) => (
-          <article
+          <Link
             key={service.id}
-            className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm"
+            href={`/manager/services/${service.id}`}
+            className="block rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -75,7 +76,7 @@ export default async function ManagerServicesPage() {
                 <span className="font-medium">{service.created_at}</span>
               </div>
             </div>
-          </article>
+          </Link>
         ))}
       </div>
     </AppShell>

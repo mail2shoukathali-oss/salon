@@ -5,6 +5,8 @@ export type ServiceStatus = "active" | "inactive";
 export type ManagerServiceRow = {
   id: string;
   name: string;
+  description: string | null;
+  active: boolean;
   default_price: number;
   status: ServiceStatus;
   created_at: string;
@@ -14,7 +16,7 @@ export async function getManagerServices() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, default_price, status, created_at")
+    .select("id, name, description, active, default_price, status, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -28,7 +30,7 @@ export async function getActiveManagerServices() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, default_price, status, created_at")
+    .select("id, name, description, active, default_price, status, created_at")
     .eq("status", "active")
     .order("name", { ascending: true });
 
@@ -37,6 +39,21 @@ export async function getActiveManagerServices() {
   }
 
   return (data ?? []) as ManagerServiceRow[];
+}
+
+export async function getManagerServiceById(serviceId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("services")
+    .select("id, name, description, active, default_price, status, created_at")
+    .eq("id", serviceId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? null) as ManagerServiceRow | null;
 }
 
 export async function createManagerService(input: {
