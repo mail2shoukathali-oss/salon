@@ -192,6 +192,7 @@ drop policy if exists service_entries_manager_select on public.service_entries;
 drop policy if exists service_entries_manager_update on public.service_entries;
 drop policy if exists service_entries_staff_insert_own on public.service_entries;
 drop policy if exists service_entries_staff_select_own on public.service_entries;
+drop policy if exists service_entries_staff_delete_own_pending on public.service_entries;
 
 drop policy if exists expenses_owner_all on public.expenses;
 drop policy if exists expenses_manager_all on public.expenses;
@@ -264,6 +265,11 @@ create policy service_entries_staff_select_own
 on public.service_entries
 for select
 using (staff_id = auth.uid());
+
+create policy service_entries_staff_delete_own_pending
+on public.service_entries
+for delete
+using (staff_id = auth.uid() and status = 'pending');
 
 -- expenses: managers manage daily operating expenses; owners can do everything.
 create policy expenses_owner_all
