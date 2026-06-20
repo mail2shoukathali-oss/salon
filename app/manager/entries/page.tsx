@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { requireManagerAccess } from "@/lib/auth/access";
+import { getManagerTodayDateString } from "@/lib/manager-closing";
 import {
   getManagerEntries,
   approveManagerEntry,
@@ -14,7 +15,22 @@ function formatMoney(amount: number) {
   return `AED ${amount.toFixed(2)}`;
 }
 
-export default async function ManagerEntriesPage() {
+function isIsoDate(value: string | undefined): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
+function formatDateLabel(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+export default async function ManagerEntriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const { user, profile } = await getCurrentUserProfile();
 
   if (!user || !profile) {
@@ -25,7 +41,11 @@ export default async function ManagerEntriesPage() {
     redirect("/staff/today");
   }
 
-  const { entries, totals } = await getManagerEntries();
+  const { date: dateParam } = await searchParams;
+  const selectedDate: string = isIsoDate(dateParam)
+    ? dateParam
+    : getManagerTodayDateString();
+  const { entries, totals } = await getManagerEntries({ date: selectedDate });
 
   async function approveEntry(entryId: string) {
     "use server";
@@ -53,9 +73,42 @@ export default async function ManagerEntriesPage() {
     <AppShell
       role={profile.role}
       title="Service entries"
-      description="Review all staff service entries and approve or reject pending items."
+      description="Review staff service entries by date and manage pending items."
     >
-      <div className="grid gap-4 sm:grid-cols-3">
+      <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <form method="get" className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-zinc-700">
+              Filter date
+            </span>
+            <input
+              type="date"
+              name="date"
+              defaultValue={selectedDate}
+              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-medium text-white"
+          >
+            Apply filter
+          </button>
+
+          <Link
+            href="/manager/entries"
+            className="rounded-2xl border border-zinc-200 px-4 py-3 text-center text-sm font-medium text-zinc-700"
+          >
+            Today
+          </Link>
+        </form>
+        <p className="mt-3 text-sm text-zinc-600">
+          Showing entries for {formatDateLabel(selectedDate)}.
+        </p>
+      </section>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">Total entries</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight">
@@ -72,6 +125,12 @@ export default async function ManagerEntriesPage() {
           <p className="text-sm font-medium text-zinc-500">Pending sales total</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight">
             {formatMoney(totals.pendingSalesTotal)}
+          </p>
+        </article>
+        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-zinc-500">Rejected count</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight">
+            {totals.rejectedCount}
           </p>
         </article>
       </div>

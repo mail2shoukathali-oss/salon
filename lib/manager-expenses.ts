@@ -10,12 +10,18 @@ export type ExpenseRow = {
   notes: string | null;
 };
 
-export async function getManagerExpenses() {
+export async function getManagerExpenses(date?: string) {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("expenses")
     .select("id, title, category, amount, payment_method, expense_date, notes")
     .order("created_at", { ascending: false });
+
+  if (date) {
+    query = query.eq("expense_date", date);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -33,4 +39,3 @@ export async function getManagerExpenses() {
 
   return { expenses, totals };
 }
-

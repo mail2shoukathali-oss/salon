@@ -20,6 +20,13 @@ export type ManagerServiceEntry = {
   reviewed_at?: string | null;
 };
 
+export type ManagerEntryTotals = {
+  totalEntries: number;
+  approvedSalesTotal: number;
+  pendingSalesTotal: number;
+  rejectedCount: number;
+};
+
 export type ManagerServiceEntryDetail = {
   id: string;
   service_date: string;
@@ -61,6 +68,7 @@ type ProfileRow = {
 
 export async function getManagerEntries(options?: {
   status?: ServiceEntryStatus;
+  date?: string;
 }) {
   const supabase = await createSupabaseServerClient();
   let query = supabase
@@ -72,6 +80,10 @@ export async function getManagerEntries(options?: {
 
   if (options?.status) {
     query = query.eq("status", options.status);
+  }
+
+  if (options?.date) {
+    query = query.eq("service_date", options.date);
   }
 
   const [{ data: entries, error: entriesError }, { data: profiles, error: profilesError }] =
@@ -102,7 +114,7 @@ export async function getManagerEntries(options?: {
     }),
   );
 
-  const totals = mappedEntries.reduce(
+  const totals = mappedEntries.reduce<ManagerEntryTotals>(
     (acc, entry) => {
       acc.totalEntries += 1;
       if (entry.status === "approved") {
@@ -111,12 +123,16 @@ export async function getManagerEntries(options?: {
       if (entry.status === "pending") {
         acc.pendingSalesTotal += Number(entry.amount);
       }
+      if (entry.status === "rejected") {
+        acc.rejectedCount += 1;
+      }
       return acc;
     },
     {
       totalEntries: 0,
       approvedSalesTotal: 0,
       pendingSalesTotal: 0,
+      rejectedCount: 0,
     },
   );
 
