@@ -61,9 +61,17 @@ export default async function ManagerStaffDailyReportPage({
             Today
           </Link>
         </form>
-        <p className="mt-3 text-sm text-zinc-600">
-          Showing staff performance for {formatReportDateLabel(report.date)}.
-        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-zinc-600">
+            Showing staff performance for {formatReportDateLabel(report.date)}.
+          </p>
+          <Link
+            href={`/manager/reports/staff-daily/print?date=${selectedDate}`}
+            className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
+          >
+            Print report
+          </Link>
+        </div>
       </section>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

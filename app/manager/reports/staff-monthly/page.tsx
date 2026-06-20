@@ -61,9 +61,17 @@ export default async function ManagerStaffMonthlyReportPage({
             Current month
           </Link>
         </form>
-        <p className="mt-3 text-sm text-zinc-600">
-          Showing staff performance for {formatReportMonthLabel(report.month)}.
-        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-zinc-600">
+            Showing staff performance for {formatReportMonthLabel(report.month)}.
+          </p>
+          <Link
+            href={`/manager/reports/staff-monthly/print?month=${selectedMonth}`}
+            className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
+          >
+            Print report
+          </Link>
+        </div>
       </section>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
