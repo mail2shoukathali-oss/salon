@@ -62,7 +62,7 @@ export async function getManagerStaffDailyReport(date: string) {
         .from("service_entries")
         .select("staff_id, amount, status")
         .eq("service_date", date),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, role"),
     ]);
 
   if (entryError) {

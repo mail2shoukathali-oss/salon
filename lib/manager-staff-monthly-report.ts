@@ -77,7 +77,7 @@ export async function getManagerStaffMonthlyReport(month: string) {
         .select("staff_id, amount, status")
         .gte("service_date", start)
         .lt("service_date", nextStart),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, role"),
     ]);
 
   if (entryError) {
