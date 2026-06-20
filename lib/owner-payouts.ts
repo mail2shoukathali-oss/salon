@@ -5,6 +5,7 @@ type ProfileRow = {
   id: string;
   full_name: string | null;
   commission_percentage: number;
+  role: "owner" | "manager" | "staff";
 };
 
 type ServiceEntryRow = {
@@ -94,7 +95,7 @@ export async function getMonthlyPayoutsList() {
           "id, staff_id, month, year, total_approved_sales, commission_amount, final_payable, status, created_at",
         )
         .order("created_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, role"),
     ]);
 
   if (payoutsError) throw payoutsError;
@@ -103,21 +104,23 @@ export async function getMonthlyPayoutsList() {
   const profileMap = new Map(
     ((profiles ?? []) as ProfileRow[]).map((profile) => [
       profile.id,
-      profile.full_name,
+      profile,
     ] as const),
   );
 
-  return ((payoutRows ?? []) as MonthlyPayoutRow[]).map((row) => ({
-    id: row.id,
-    staff_name: profileMap.get(row.staff_id) ?? null,
-    month: row.month,
-    year: row.year,
-    total_approved_sales: Number(row.total_approved_sales),
-    commission_amount: Number(row.commission_amount),
-    final_payable: Number(row.final_payable),
-    status: row.status,
-    created_at: row.created_at,
-  })) satisfies MonthlyPayoutListItem[];
+  return ((payoutRows ?? []) as MonthlyPayoutRow[])
+    .filter((row) => profileMap.get(row.staff_id)?.role !== "owner")
+    .map((row) => ({
+      id: row.id,
+      staff_name: profileMap.get(row.staff_id)?.full_name ?? null,
+      month: row.month,
+      year: row.year,
+      total_approved_sales: Number(row.total_approved_sales),
+      commission_amount: Number(row.commission_amount),
+      final_payable: Number(row.final_payable),
+      status: row.status,
+      created_at: row.created_at,
+    })) satisfies MonthlyPayoutListItem[];
 }
 
 export async function getMonthlyPayoutMonthData(year: number, month: number) {
@@ -135,7 +138,7 @@ export async function getMonthlyPayoutMonthData(year: number, month: number) {
       .eq("status", "approved")
       .gte("service_date", start)
       .lt("service_date", nextStart),
-    supabase.from("profiles").select("id, full_name, commission_percentage"),
+    supabase.from("profiles").select("id, full_name, commission_percentage, role"),
     supabase
       .from("monthly_payouts")
       .select(
@@ -169,6 +172,11 @@ export async function getMonthlyPayoutMonthData(year: number, month: number) {
   >();
 
   for (const entry of (entryRows ?? []) as ServiceEntryRow[]) {
+    const profile = profileMap.get(entry.staff_id);
+    if (profile?.role === "owner") {
+      continue;
+    }
+
     const current = staffMap.get(entry.staff_id) ?? {
       totalApprovedSales: 0,
       approvedEntriesCount: 0,
@@ -182,6 +190,9 @@ export async function getMonthlyPayoutMonthData(year: number, month: number) {
   const payouts = Array.from(staffMap.entries())
     .map(([staffId, stats]) => {
       const profile = profileMap.get(staffId);
+      if (profile?.role === "owner") {
+        return null;
+      }
       const existing = existingMap.get(staffId);
       const commissionPercentage = Number(profile?.commission_percentage ?? 0);
       const deductions = Number(existing?.deductions ?? 0);
@@ -207,6 +218,7 @@ export async function getMonthlyPayoutMonthData(year: number, month: number) {
         payout_id: existing?.id ?? null,
       };
     })
+    .filter((payout): payout is NonNullable<typeof payout> => payout !== null)
     .sort((a, b) => b.total_approved_sales - a.total_approved_sales);
 
   return {

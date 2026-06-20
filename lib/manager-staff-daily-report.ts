@@ -4,6 +4,7 @@ import { getManagerTodayDateString } from "@/lib/manager-closing";
 type ProfileRow = {
   id: string;
   full_name: string | null;
+  role: "owner" | "manager" | "staff";
 };
 
 type ServiceEntryRow = {
@@ -74,7 +75,10 @@ export async function getManagerStaffDailyReport(date: string) {
 
   const profiles = (profileRows ?? []) as ProfileRow[];
   const profileMap = new Map(
-    profiles.map((profile) => [profile.id, profile.full_name] as const),
+    profiles.map((profile) => [
+      profile.id,
+      { full_name: profile.full_name, role: profile.role },
+    ] as const),
   );
 
   const staffMap = new Map<string, ManagerStaffDailyStaffRow>();
@@ -89,10 +93,15 @@ export async function getManagerStaffDailyReport(date: string) {
   };
 
   for (const entry of (entryRows ?? []) as ServiceEntryRow[]) {
+    const profile = profileMap.get(entry.staff_id);
+    if (profile?.role === "owner") {
+      continue;
+    }
+
     const amount = Number(entry.amount);
     const current = staffMap.get(entry.staff_id) ?? {
       staff_id: entry.staff_id,
-      staff_name: profileMap.get(entry.staff_id) ?? null,
+      staff_name: profile?.full_name ?? null,
       approvedSalesTotal: 0,
       approvedEntriesCount: 0,
       pendingEntriesCount: 0,
