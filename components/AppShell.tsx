@@ -18,30 +18,70 @@ const roleLabels: Record<UserRole, { title: string; subtitle: string }> = {
   },
 };
 
-const navigation: Record<UserRole, ShellNavItem[]> = {
+type NavSection = {
+  title: string;
+  items: ShellNavItem[];
+};
+
+const navigation: Record<UserRole, NavSection[] | ShellNavItem[]> = {
   owner: [
-    { href: "/owner/dashboard", label: "Dashboard" },
-    { href: "/owner/staff", label: "Staff" },
-    { href: "/owner/settings", label: "Settings" },
-    { href: "/manager/reports/staff-daily", label: "Staff Report" },
-    { href: "/manager/reports/staff-monthly", label: "Monthly Report" },
-    { href: "/manager/services", label: "Services" },
-    { href: "/manager/entries", label: "Entries" },
-    { href: "/manager/expenses", label: "Expenses" },
-    { href: "/manager/closing", label: "Closing" },
-    { href: "/owner/payouts", label: "Payouts" },
-    { href: "/staff/today", label: "Today" },
+    {
+      title: "Main",
+      items: [
+        { href: "/owner/dashboard", label: "Dashboard" },
+        { href: "/staff/today", label: "Today" },
+      ],
+    },
+    {
+      title: "Operations",
+      items: [
+        { href: "/manager/services", label: "Services" },
+        { href: "/manager/entries", label: "Entries" },
+        { href: "/manager/expenses", label: "Expenses" },
+        { href: "/manager/closing", label: "Closing" },
+      ],
+    },
+    {
+      title: "Reports",
+      items: [
+        { href: "/manager/reports/staff-daily", label: "Staff Report" },
+        { href: "/manager/reports/staff-monthly", label: "Monthly Report" },
+        { href: "/owner/payouts", label: "Payouts" },
+      ],
+    },
+    {
+      title: "Settings",
+      items: [
+        { href: "/owner/staff", label: "Staff" },
+        { href: "/owner/settings", label: "Settings" },
+      ],
+    },
   ],
   manager: [
-    { href: "/manager/dashboard", label: "Dashboard" },
-    { href: "/manager/reports/staff-daily", label: "Staff Report" },
-    { href: "/manager/reports/staff-monthly", label: "Monthly Report" },
-    { href: "/manager/services", label: "Services" },
-    { href: "/manager/entries", label: "Entries" },
-    { href: "/manager/expenses", label: "Expenses" },
-    { href: "/manager/closing", label: "Closing" },
-    { href: "/owner/payouts", label: "Payouts" },
-    { href: "/staff/today", label: "Today" },
+    {
+      title: "Main",
+      items: [
+        { href: "/manager/dashboard", label: "Dashboard" },
+        { href: "/staff/today", label: "Today" },
+      ],
+    },
+    {
+      title: "Operations",
+      items: [
+        { href: "/manager/services", label: "Services" },
+        { href: "/manager/entries", label: "Entries" },
+        { href: "/manager/expenses", label: "Expenses" },
+        { href: "/manager/closing", label: "Closing" },
+      ],
+    },
+    {
+      title: "Reports",
+      items: [
+        { href: "/manager/reports/staff-daily", label: "Staff Report" },
+        { href: "/manager/reports/staff-monthly", label: "Monthly Report" },
+        { href: "/owner/payouts", label: "Payouts" },
+      ],
+    },
   ],
   staff: [
     { href: "/staff/today", label: "Today" },
@@ -82,17 +122,43 @@ export function AppShell({ role, title, description, children }: AppShellProps) 
           </div>
         </header>
 
-        <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {navigation[role].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:text-zinc-950"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {role === "staff" ? (
+          <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {(navigation[role] as ShellNavItem[]).map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:text-zinc-950"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        ) : (
+          <nav className="mt-4 grid gap-4">
+            {(navigation[role] as NavSection[]).map((section) => (
+              <section
+                key={section.title}
+                className="rounded-3xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <p className="px-1 pb-3 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                  {section.title}
+                </p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {section.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-center text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:text-zinc-950"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </nav>
+        )}
 
         <div className="mt-3 flex justify-start">
           <LogoutButton />
