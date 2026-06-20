@@ -2,10 +2,19 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { ShellNavItem, UserRole } from "@/types";
 
-const roleLabels: Record<UserRole, string> = {
-  owner: "Owner view",
-  manager: "Manager view",
-  staff: "Staff view",
+const roleLabels: Record<UserRole, { title: string; subtitle: string }> = {
+  owner: {
+    title: "Owner view",
+    subtitle: "Full operations overview",
+  },
+  manager: {
+    title: "Manager view",
+    subtitle: "Daily operations control",
+  },
+  staff: {
+    title: "Staff view",
+    subtitle: "Daily service entry",
+  },
 };
 
 const navigation: Record<UserRole, ShellNavItem[]> = {
@@ -60,8 +69,8 @@ export function AppShell({ role, title, description, children }: AppShellProps) 
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-200">
-              <p className="font-medium text-white">{roleLabels[role]}</p>
-              <p className="mt-1 text-zinc-300">Mobile-first placeholder layout</p>
+              <p className="font-medium text-white">{roleLabels[role].title}</p>
+              <p className="mt-1 text-zinc-300">{roleLabels[role].subtitle}</p>
             </div>
           </div>
         </header>
