@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import {
   formatEntryDateTime,
   getStaffTodayData,
 } from "@/lib/staff-today";
+import {
+  deleteStaffPendingEntry,
+  getStaffPendingEntryById,
+} from "@/lib/staff-entry-edit";
 
 function formatMoney(amount: number) {
   return `AED ${amount.toFixed(2)}`;
@@ -30,6 +35,32 @@ export default async function StaffTodayPage() {
   }
 
   const { entries, summary } = await getStaffTodayData(user.id);
+
+  async function cancelEntry(entryId: string) {
+    "use server";
+
+    const { user: currentUser, profile: currentProfile } =
+      await getCurrentUserProfile();
+
+    if (!currentUser || !currentProfile) {
+      redirect("/login");
+    }
+
+    const entry = await getStaffPendingEntryById(entryId, currentUser.id);
+
+    if (!entry) {
+      redirect("/staff/today");
+    }
+
+    const { error } = await deleteStaffPendingEntry(entryId, currentUser.id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath("/staff/today");
+    redirect("/staff/today");
+  }
 
   return (
     <AppShell
@@ -147,6 +178,25 @@ export default async function StaffTodayPage() {
                 </span>
               </div>
             </div>
+
+            {entry.status === "pending" ? (
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Link
+                  href={`/staff/entries/${entry.id}/edit`}
+                  className="inline-flex items-center justify-center rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700"
+                >
+                  Edit
+                </Link>
+                <form action={cancelEntry.bind(null, entry.id)}>
+                  <button
+                    type="submit"
+                    className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 sm:w-auto"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

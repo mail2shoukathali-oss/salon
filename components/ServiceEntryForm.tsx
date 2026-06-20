@@ -7,12 +7,20 @@ export type ServiceEntryFormState = {
   error: string | null;
 };
 
+export type ServiceEntryPaymentMethod = "cash" | "card" | "online";
+
 type ServiceEntryFormProps = {
   action: (state: ServiceEntryFormState, formData: FormData) => Promise<ServiceEntryFormState>;
   submitLabel: string;
   services: ManagerServiceRow[];
   disabled?: boolean;
   disabledMessage?: string;
+  initialServiceId?: string;
+  initialAmount?: string;
+  initialPaymentMethod?: ServiceEntryPaymentMethod;
+  initialCustomerName?: string;
+  initialCustomerPhone?: string;
+  initialNotes?: string;
 };
 
 const initialState: ServiceEntryFormState = {
@@ -25,13 +33,24 @@ export function ServiceEntryForm({
   services,
   disabled = false,
   disabledMessage,
+  initialServiceId,
+  initialAmount,
+  initialPaymentMethod = "cash",
+  initialCustomerName = "",
+  initialCustomerPhone = "",
+  initialNotes = "",
 }: ServiceEntryFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
-  const [selectedServiceId, setSelectedServiceId] = useState(() => services[0]?.id ?? "");
-  const [amount, setAmount] = useState(() =>
-    services[0]?.default_price != null
-      ? String(Number(services[0].default_price).toFixed(2))
-      : "",
+  const initialSelectedService = services.find((service) => service.id === initialServiceId) ?? services[0] ?? null;
+  const [selectedServiceId, setSelectedServiceId] = useState(
+    () => initialSelectedService?.id ?? "",
+  );
+  const [amount, setAmount] = useState(
+    () =>
+      initialAmount ??
+      (initialSelectedService?.default_price != null
+        ? String(Number(initialSelectedService.default_price).toFixed(2))
+        : ""),
   );
   const selectedService = services.find((service) => service.id === selectedServiceId) ?? null;
 
@@ -99,7 +118,7 @@ export function ServiceEntryForm({
         </span>
         <select
           name="payment_method"
-          defaultValue="cash"
+          defaultValue={initialPaymentMethod}
           disabled={disabled || services.length === 0}
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
         >
@@ -116,6 +135,7 @@ export function ServiceEntryForm({
         <input
           type="text"
           name="customer_name"
+          defaultValue={initialCustomerName}
           placeholder="Optional"
           disabled={disabled || services.length === 0}
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
@@ -129,6 +149,7 @@ export function ServiceEntryForm({
         <input
           type="tel"
           name="customer_phone"
+          defaultValue={initialCustomerPhone}
           placeholder="Optional"
           disabled={disabled || services.length === 0}
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
@@ -142,6 +163,7 @@ export function ServiceEntryForm({
         <textarea
           name="notes"
           rows={4}
+          defaultValue={initialNotes}
           placeholder="Optional"
           disabled={disabled || services.length === 0}
           className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
