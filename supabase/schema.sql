@@ -9,6 +9,7 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   role text not null default 'staff' check (role in ('owner', 'manager', 'staff')),
+  status text not null default 'active' check (status in ('active', 'inactive')),
   full_name text,
   phone text,
   commission_percentage numeric(5,2) not null default 0 check (commission_percentage between 0 and 100),
@@ -147,6 +148,7 @@ $$;
 
 -- Indexes for common lookups and filters.
 create index if not exists idx_profiles_role on public.profiles (role);
+create index if not exists idx_profiles_status on public.profiles (status);
 create index if not exists idx_services_active on public.services (active);
 
 create index if not exists idx_service_entries_staff_id on public.service_entries (staff_id);
