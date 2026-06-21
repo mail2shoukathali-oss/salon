@@ -2,11 +2,14 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { recordActivityLog } from "@/lib/activity-log";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { requireManagerAccess } from "@/lib/auth/access";
 import {
+  buildManagerEntryActivitySnapshot,
   getManagerEntries,
   approveManagerEntry,
+  getManagerEntryById,
   type ManagerServiceEntry,
 } from "@/lib/manager-entries";
 
@@ -37,8 +40,34 @@ export default async function ManagerPendingEntriesPage() {
       redirect("/login");
     }
 
+    const currentEntry = await getManagerEntryById(entryId);
+    if (!currentEntry || currentEntry.status !== "pending") {
+      redirect("/manager/entries/pending");
+    }
+
     try {
       await approveManagerEntry(entryId, currentUser.id);
+      await recordActivityLog({
+        actorId: currentProfile.id,
+        actorName: currentProfile.full_name || "Unknown user",
+        actorRole: currentProfile.role,
+        action: "entry_approved",
+        entityType: "service_entry",
+        entityId: currentEntry.id,
+        entityLabel: currentEntry.service_name || currentEntry.id,
+        businessDate: currentEntry.service_date,
+        beforeData: buildManagerEntryActivitySnapshot(currentEntry),
+        afterData: {
+          status: "approved",
+          reviewed_by: currentUser.id,
+          reviewed_at: new Date().toISOString(),
+        },
+        metadata: {
+          staff_id: currentEntry.staff_id,
+          amount: currentEntry.amount,
+          payment_method: currentEntry.payment_method,
+        },
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to update entry status.";

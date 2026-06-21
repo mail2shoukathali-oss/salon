@@ -7,7 +7,9 @@ import {
   type ManagerEntryRejectFormState,
 } from "@/components/ManagerEntryRejectForm";
 import { requireManagerAccess } from "@/lib/auth/access";
+import { recordActivityLog } from "@/lib/activity-log";
 import {
+  buildManagerEntryActivitySnapshot,
   approveManagerEntry,
   getManagerEntryById,
   rejectManagerEntry,
@@ -71,6 +73,27 @@ export default async function ManagerEntryDetailPage({
     }
 
     await approveManagerEntry(id, currentUser.id);
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "entry_approved",
+      entityType: "service_entry",
+      entityId: currentEntry.id,
+      entityLabel: currentEntry.service_name || currentEntry.id,
+      businessDate: currentEntry.service_date,
+      beforeData: buildManagerEntryActivitySnapshot(currentEntry),
+      afterData: {
+        status: "approved",
+        reviewed_by: currentUser.id,
+        reviewed_at: new Date().toISOString(),
+      },
+      metadata: {
+        staff_id: currentEntry.staff_id,
+        amount: currentEntry.amount,
+        payment_method: currentEntry.payment_method,
+      },
+    });
     revalidatePath("/manager/entries");
     revalidatePath("/manager/entries/pending");
     revalidatePath(`/manager/entries/${id}`);
@@ -113,6 +136,28 @@ export default async function ManagerEntryDetailPage({
       return { error: message };
     }
 
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "entry_rejected",
+      entityType: "service_entry",
+      entityId: currentEntry.id,
+      entityLabel: currentEntry.service_name || currentEntry.id,
+      businessDate: currentEntry.service_date,
+      beforeData: buildManagerEntryActivitySnapshot(currentEntry),
+      afterData: {
+        status: "rejected",
+        reviewed_by: currentUser.id,
+        reviewed_at: new Date().toISOString(),
+        rejection_reason: reason,
+      },
+      metadata: {
+        staff_id: currentEntry.staff_id,
+        amount: currentEntry.amount,
+        payment_method: currentEntry.payment_method,
+      },
+    });
     revalidatePath("/manager/entries");
     revalidatePath("/manager/entries/pending");
     revalidatePath(`/manager/entries/${id}`);

@@ -45,6 +45,20 @@ export type ManagerServiceEntryDetail = {
   created_at: string;
 };
 
+export type ManagerEntryActivitySnapshot = {
+  staff_id: string;
+  amount: number;
+  payment_method: ServicePaymentMethod;
+  customer_name: string | null;
+  customer_phone: string | null;
+  service_name: string;
+  service_date: string;
+  status: ServiceEntryStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  notes: string | null;
+};
+
 type ServiceEntryRow = {
   id: string;
   service_date: string;
@@ -196,6 +210,37 @@ export async function getManagerEntryById(entryId: string) {
     reviewed_at: entry.reviewed_at ?? null,
     created_at: entry.created_at ?? new Date().toISOString(),
   } satisfies ManagerServiceEntryDetail;
+}
+
+export function buildManagerEntryActivitySnapshot(
+  entry: Pick<
+    ManagerServiceEntryDetail,
+    | "staff_id"
+    | "amount"
+    | "payment_method"
+    | "customer_name"
+    | "customer_phone"
+    | "service_name"
+    | "service_date"
+    | "status"
+    | "reviewed_by"
+    | "reviewed_at"
+    | "notes"
+  >,
+): ManagerEntryActivitySnapshot {
+  return {
+    staff_id: entry.staff_id,
+    amount: entry.amount,
+    payment_method: entry.payment_method,
+    customer_name: entry.customer_name,
+    customer_phone: entry.customer_phone,
+    service_name: entry.service_name,
+    service_date: entry.service_date,
+    status: entry.status,
+    reviewed_by: entry.reviewed_by,
+    reviewed_at: entry.reviewed_at,
+    notes: entry.notes,
+  };
 }
 
 export async function approveManagerEntry(entryId: string, reviewedBy: string) {
