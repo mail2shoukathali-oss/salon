@@ -39,6 +39,7 @@ The app is currently in an MVP-ready state for operational use. The next phase s
 - Staff monthly estimated commission view
 - Staff profile/account view
 - Manager daily and monthly staff performance reports
+- Activity log foundation and viewer
 - Print pages for payouts, daily closing, and staff reports
 - Business settings for printable document titles and company name
 - AppShell navigation grouping and logout controls
@@ -65,6 +66,11 @@ The app is currently in an MVP-ready state for operational use. The next phase s
 - Can edit or cancel only their own pending entries.
 - Cannot access manager or owner management actions.
 
+### Activity Log Access
+
+- Owner and manager can view the activity log viewer at `/manager/activity`.
+- Staff cannot access activity logs.
+
 ## Staff Flow Checklist
 
 - Log in successfully.
@@ -90,6 +96,7 @@ The app is currently in an MVP-ready state for operational use. The next phase s
 - Open daily and monthly staff performance reports.
 - Use print pages for daily closing and staff performance reports when needed.
 - View monthly payouts without editing payout generation.
+- Review the audit trail in `/manager/activity`.
 
 ## Owner Flow Checklist
 
@@ -100,6 +107,7 @@ The app is currently in an MVP-ready state for operational use. The next phase s
 - Mark payouts as paid after verification.
 - Open `/owner/settings` to edit business name and printable statement titles.
 - Review all operational reports and print statements.
+- Review the audit trail in `/manager/activity`.
 
 ## Print/Report Checklist
 
@@ -110,6 +118,22 @@ The app is currently in an MVP-ready state for operational use. The next phase s
 - Payout print page excludes owner rows.
 - Print pages are A4-friendly and hide action controls when printing.
 - Report and payout copy avoids commission language where commission is not part of that workflow.
+
+## Activity Log Checklist
+
+- Activity log table documentation exists in [`docs/sql/activity_logs.sql`](./sql/activity_logs.sql).
+- The `activity_logs` table should already be applied in Supabase for production use.
+- The read-only activity log viewer lives at `/manager/activity`.
+- Logged actions currently cover:
+  - Staff entry create/edit/cancel
+  - Manager entry approve/reject
+  - Expense create/edit/delete
+  - Daily closing save
+  - Owner payout generate/adjust/mark paid
+  - Business settings update
+  - Service catalog create/update
+  - Staff profile create/update
+- Activity log writes are intended for owner and manager visibility only.
 
 ## Deployment Notes
 
@@ -125,13 +149,12 @@ The app is currently in an MVP-ready state for operational use. The next phase s
 - Staff monthly commission is only an estimate; final payout may change after owner deductions or advance deductions.
 - Owner rows are intentionally excluded from staff performance reports and payout rows.
 - Business name and printable titles are configurable through `/owner/settings`.
+- Activity logs are read-only in the app and rely on the manual Supabase SQL being applied first.
 
 ## Recommended Next Features
 
-- Add audit history for payout adjustments.
 - Add a downloadable PDF export for print pages.
 - Add stronger validation for service catalog and expense data entry.
 - Add optional notes or tags for rejected entries.
 - Add summary charts for owner and manager dashboards.
-- Add a lightweight activity log for operational actions.
-
+- Add filters and export controls for the activity log viewer.
