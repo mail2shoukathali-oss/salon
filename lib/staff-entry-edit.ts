@@ -16,6 +16,16 @@ export type StaffPendingEntry = {
   created_at: string;
 };
 
+export type StaffPendingEntryUpdateInput = {
+  service_id: string;
+  service_name: string;
+  amount: number;
+  payment_method: ServiceEntryPaymentMethod;
+  customer_name: string | null;
+  customer_phone: string | null;
+  notes: string | null;
+};
+
 export async function getStaffPendingEntryById(entryId: string, staffId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -38,18 +48,10 @@ export async function getStaffPendingEntryById(entryId: string, staffId: string)
 export async function updateStaffPendingEntry(
   entryId: string,
   staffId: string,
-  input: {
-    service_id: string;
-    service_name: string;
-    amount: number;
-    payment_method: ServiceEntryPaymentMethod;
-    customer_name: string | null;
-    customer_phone: string | null;
-    notes: string | null;
-  },
+  input: StaffPendingEntryUpdateInput,
 ) {
   const supabase = await createSupabaseServerClient();
-  return supabase
+  const { data, error } = await supabase
     .from("service_entries")
     .update({
       service_id: input.service_id,
@@ -62,7 +64,24 @@ export async function updateStaffPendingEntry(
     })
     .eq("id", entryId)
     .eq("staff_id", staffId)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .select(
+      "id, staff_id, service_id, service_name, amount, payment_method, customer_name, customer_phone, notes, status, service_date, created_at",
+    )
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  if (!data) {
+    return {
+      data: null,
+      error: new Error("Pending entry could not be updated."),
+    };
+  }
+
+  return { data: data as StaffPendingEntry, error: null };
 }
 
 export async function deleteStaffPendingEntry(entryId: string, staffId: string) {

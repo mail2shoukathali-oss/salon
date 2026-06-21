@@ -107,7 +107,7 @@ export default async function EditStaffEntryPage({
       return { error: "Selected service is no longer available." };
     }
 
-    const { error } = await updateStaffPendingEntry(id, currentUser.id, {
+    const { data: updatedEntry, error } = await updateStaffPendingEntry(id, currentUser.id, {
       service_id: selectedService.id,
       service_name: selectedService.name,
       amount,
@@ -121,33 +121,26 @@ export default async function EditStaffEntryPage({
       return { error: error.message };
     }
 
+    if (!updatedEntry) {
+      return { error: "Pending entry could not be updated." };
+    }
+
     await recordActivityLog({
       actorId: currentProfile.id,
       actorName: currentProfile.full_name || "Unknown user",
       actorRole: currentProfile.role,
       action: "staff_entry_updated",
       entityType: "service_entry",
-      entityId: currentEntry.id,
-      entityLabel: selectedService.name,
-      businessDate: currentEntry.service_date,
+      entityId: updatedEntry.id,
+      entityLabel: updatedEntry.service_name,
+      businessDate: updatedEntry.service_date,
       beforeData: buildStaffEntryActivitySnapshot(currentEntry),
-      afterData: buildStaffEntryActivitySnapshot({
-        ...currentEntry,
-        service_id: selectedService.id,
-        service_name: selectedService.name,
-        amount,
-        payment_method: paymentMethod as "cash" | "card" | "online",
-        customer_name: customerName || null,
-        customer_phone: customerPhone || null,
-        notes: notes || null,
-        status: "pending",
-        created_at: currentEntry.created_at,
-      }),
+      afterData: buildStaffEntryActivitySnapshot(updatedEntry),
       metadata: {
-        staff_id: currentEntry.staff_id,
-        amount,
-        payment_method: paymentMethod,
-        status: "pending",
+        staff_id: updatedEntry.staff_id,
+        amount: Number(updatedEntry.amount),
+        payment_method: updatedEntry.payment_method,
+        status: updatedEntry.status,
       },
     });
 
