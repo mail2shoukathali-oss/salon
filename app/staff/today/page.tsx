@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { PendingCancelForm } from "@/components/PendingCancelForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import {
   formatEntryDateTime,
@@ -12,6 +13,7 @@ import {
   deleteStaffPendingEntry,
   getStaffPendingEntryById,
 } from "@/lib/staff-entry-edit";
+import { buildStaffEntryActivitySnapshot } from "@/lib/staff-entry-activity";
 
 function formatMoney(amount: number) {
   return `AED ${amount.toFixed(2)}`;
@@ -54,6 +56,25 @@ export default async function StaffTodayPage() {
     }
 
     await deleteStaffPendingEntry(entryId, currentUser.id);
+
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "staff_entry_deleted",
+      entityType: "service_entry",
+      entityId: entry.id,
+      entityLabel: entry.service_name,
+      businessDate: entry.service_date,
+      beforeData: buildStaffEntryActivitySnapshot(entry),
+      afterData: null,
+      metadata: {
+        staff_id: entry.staff_id,
+        amount: Number(entry.amount),
+        payment_method: entry.payment_method,
+        status: entry.status,
+      },
+    });
 
     revalidatePath("/staff/today");
     redirect("/staff/today");

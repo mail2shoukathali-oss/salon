@@ -6,12 +6,14 @@ import {
   type ServiceEntryFormState,
 } from "@/components/ServiceEntryForm";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
+import { recordActivityLog } from "@/lib/activity-log";
 import {
   getActiveManagerServices,
   type ManagerServiceRow,
 } from "@/lib/manager-services";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getTodayDateString } from "@/lib/staff-entries";
+import { buildStaffEntryActivitySnapshot } from "@/lib/staff-entry-activity";
 
 export default async function AddServicePage() {
   const { user, profile } = await getCurrentUserProfile();
@@ -76,7 +78,9 @@ export default async function AddServicePage() {
       return { error: "Selected service is no longer available." };
     }
 
-    const { error } = await supabase.from("service_entries").insert({
+    const { data, error } = await supabase
+      .from("service_entries")
+      .insert({
       staff_id: currentUser.id,
       service_id: selectedService.id,
       service_name: selectedService.name,
@@ -87,10 +91,35 @@ export default async function AddServicePage() {
       customer_phone: customerPhone || null,
       notes: notes || null,
       status: "pending",
-    });
+      })
+      .select(
+        "id, staff_id, service_id, service_name, amount, payment_method, customer_name, customer_phone, notes, status, service_date, created_at",
+      )
+      .maybeSingle();
 
     if (error) {
       return { error: error.message };
+    }
+
+    if (data) {
+      await recordActivityLog({
+        actorId: currentProfile.id,
+        actorName: currentProfile.full_name || "Unknown user",
+        actorRole: currentProfile.role,
+        action: "staff_entry_created",
+        entityType: "service_entry",
+        entityId: data.id,
+        entityLabel: data.service_name,
+        businessDate: data.service_date,
+        beforeData: null,
+        afterData: buildStaffEntryActivitySnapshot(data),
+        metadata: {
+          staff_id: data.staff_id,
+          amount: Number(data.amount),
+          payment_method: data.payment_method,
+          status: data.status,
+        },
+      });
     }
 
     revalidatePath("/staff/today");

@@ -5,10 +5,15 @@ import {
   ServiceEntryForm,
   type ServiceEntryFormState,
 } from "@/components/ServiceEntryForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { getActiveManagerServices } from "@/lib/manager-services";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getStaffPendingEntryById, updateStaffPendingEntry } from "@/lib/staff-entry-edit";
+import {
+  getStaffPendingEntryById,
+  updateStaffPendingEntry,
+} from "@/lib/staff-entry-edit";
+import { buildStaffEntryActivitySnapshot } from "@/lib/staff-entry-activity";
 
 function formatMoney(amount: number) {
   return `AED ${amount.toFixed(2)}`;
@@ -115,6 +120,36 @@ export default async function EditStaffEntryPage({
     if (error) {
       return { error: error.message };
     }
+
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "staff_entry_updated",
+      entityType: "service_entry",
+      entityId: currentEntry.id,
+      entityLabel: selectedService.name,
+      businessDate: currentEntry.service_date,
+      beforeData: buildStaffEntryActivitySnapshot(currentEntry),
+      afterData: buildStaffEntryActivitySnapshot({
+        ...currentEntry,
+        service_id: selectedService.id,
+        service_name: selectedService.name,
+        amount,
+        payment_method: paymentMethod as "cash" | "card" | "online",
+        customer_name: customerName || null,
+        customer_phone: customerPhone || null,
+        notes: notes || null,
+        status: "pending",
+        created_at: currentEntry.created_at,
+      }),
+      metadata: {
+        staff_id: currentEntry.staff_id,
+        amount,
+        payment_method: paymentMethod,
+        status: "pending",
+      },
+    });
 
     revalidatePath("/staff/today");
     redirect("/staff/today");
