@@ -2,8 +2,10 @@ import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { ServiceForm, type ServiceFormState } from "@/components/ServiceForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { requireManagerAccess } from "@/lib/auth/access";
 import {
+  buildServiceActivitySnapshot,
   getManagerServiceById,
   type ServiceStatus,
 } from "@/lib/manager-services";
@@ -17,8 +19,9 @@ export default async function EditManagerServicePage({
   const { profile } = await requireManagerAccess();
   const { id } = await params;
   const service = await getManagerServiceById(id);
+  const serviceRecord = service as NonNullable<typeof service>;
 
-  if (!service) {
+  if (!serviceRecord) {
     notFound();
   }
 
@@ -28,7 +31,7 @@ export default async function EditManagerServicePage({
   ): Promise<ServiceFormState> {
     "use server";
 
-    await requireManagerAccess();
+    const { profile: currentProfile } = await requireManagerAccess();
 
     const name = String(formData.get("name") ?? "").trim();
     const defaultPriceRaw = String(formData.get("default_price") ?? "").trim();
@@ -61,6 +64,28 @@ export default async function EditManagerServicePage({
       return { error: error.message };
     }
 
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "service_updated",
+      entityType: "service",
+      entityId: serviceRecord.id,
+      entityLabel: name,
+      beforeData: buildServiceActivitySnapshot(serviceRecord),
+      afterData: {
+        id: serviceRecord.id,
+        name,
+        default_price: defaultPrice,
+        status: statusRaw as ServiceStatus,
+      },
+      metadata: {
+        name,
+        default_price: defaultPrice,
+        status: statusRaw as ServiceStatus,
+      },
+    });
+
     revalidatePath("/manager/services");
     redirect("/manager/services");
   }
@@ -81,9 +106,9 @@ export default async function EditManagerServicePage({
             action={updateService}
             submitLabel="Save changes"
             initialValues={{
-              name: service.name,
-              defaultPrice: String(Number(service.default_price).toFixed(2)),
-              status: service.status,
+              name: serviceRecord.name,
+              defaultPrice: String(Number(serviceRecord.default_price).toFixed(2)),
+              status: serviceRecord.status,
             }}
           />
         </div>

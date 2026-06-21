@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { ServiceForm, type ServiceFormState } from "@/components/ServiceForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { requireManagerAccess } from "@/lib/auth/access";
 import {
   createManagerService,
@@ -17,7 +18,7 @@ export default async function NewManagerServicePage() {
   ): Promise<ServiceFormState> {
     "use server";
 
-    await requireManagerAccess();
+    const { profile: currentProfile } = await requireManagerAccess();
 
     const name = String(formData.get("name") ?? "").trim();
     const defaultPriceRaw = String(formData.get("default_price") ?? "").trim();
@@ -36,7 +37,7 @@ export default async function NewManagerServicePage() {
       return { error: "Status must be active or inactive." };
     }
 
-    const { error } = await createManagerService({
+    const { data, error } = await createManagerService({
       name,
       defaultPrice,
       status: statusRaw as ServiceStatus,
@@ -44,6 +45,30 @@ export default async function NewManagerServicePage() {
 
     if (error) {
       return { error: error.message };
+    }
+
+    if (data) {
+      await recordActivityLog({
+        actorId: currentProfile.id,
+        actorName: currentProfile.full_name || "Unknown user",
+        actorRole: currentProfile.role,
+        action: "service_created",
+        entityType: "service",
+        entityId: data.id,
+        entityLabel: data.name,
+        beforeData: null,
+        afterData: {
+          id: data.id,
+          name: data.name,
+          default_price: Number(data.default_price),
+          status: data.status,
+        },
+        metadata: {
+          name: data.name,
+          default_price: Number(data.default_price),
+          status: data.status,
+        },
+      });
     }
 
     revalidatePath("/manager/services");

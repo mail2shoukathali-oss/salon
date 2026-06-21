@@ -12,6 +12,13 @@ export type ManagerServiceRow = {
   created_at: string;
 };
 
+export type ServiceActivitySnapshot = {
+  id: string;
+  name: string;
+  default_price: number;
+  status: ServiceStatus;
+};
+
 export async function getManagerServices() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -62,9 +69,24 @@ export async function createManagerService(input: {
   status: ServiceStatus;
 }) {
   const supabase = await createSupabaseServerClient();
-  return supabase.from("services").insert({
+  return supabase
+    .from("services")
+    .insert({
     name: input.name,
     default_price: input.defaultPrice,
     status: input.status,
-  });
+    })
+    .select("id, name, default_price, status")
+    .maybeSingle();
+}
+
+export function buildServiceActivitySnapshot(
+  service: Pick<ManagerServiceRow, "id" | "name" | "default_price" | "status">,
+): ServiceActivitySnapshot {
+  return {
+    id: service.id,
+    name: service.name,
+    default_price: Number(service.default_price),
+    status: service.status,
+  };
 }
