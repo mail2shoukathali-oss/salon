@@ -87,8 +87,8 @@ export default async function EditStaffEntryPage({
       return { error: "Amount must be greater than 0." };
     }
 
-    if (!["cash", "card", "online"].includes(paymentMethod)) {
-      return { error: "Payment method must be cash, card, or online." };
+    if (!["cash", "card", "online", "other"].includes(paymentMethod)) {
+      return { error: "Payment method must be cash, card, online, or other." };
     }
 
     const supabase = await createSupabaseServerClient();
@@ -111,7 +111,7 @@ export default async function EditStaffEntryPage({
       service_id: selectedService.id,
       service_name: selectedService.name,
       amount,
-      payment_method: paymentMethod as "cash" | "card" | "online",
+      payment_method: paymentMethod as "cash" | "card" | "online" | "other",
       customer_name: customerName || null,
       customer_phone: customerPhone || null,
       notes: notes || null,

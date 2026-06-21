@@ -5,7 +5,7 @@ export type StaffTodayEntry = {
   id: string;
   service_name: string;
   amount: number;
-  payment_method: "cash" | "card" | "online";
+  payment_method: "cash" | "card" | "online" | "other";
   customer_name: string | null;
   customer_phone: string | null;
   notes: string | null;

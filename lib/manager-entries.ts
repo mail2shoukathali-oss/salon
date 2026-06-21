@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ServiceEntryStatus = "pending" | "approved" | "rejected";
-export type ServicePaymentMethod = "cash" | "card" | "online";
+export type ServicePaymentMethod = "cash" | "card" | "online" | "other";
 
 export type ManagerServiceEntry = {
   id: string;

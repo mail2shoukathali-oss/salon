@@ -4,7 +4,7 @@ type StaffMonthlyEntryRow = {
   id: string;
   service_name: string;
   amount: number;
-  payment_method: "cash" | "card" | "online";
+  payment_method: "cash" | "card" | "online" | "other";
   status: "pending" | "approved" | "rejected";
   service_date: string;
 };

@@ -7,7 +7,7 @@ export type ServiceEntryFormState = {
   error: string | null;
 };
 
-export type ServiceEntryPaymentMethod = "cash" | "card" | "online";
+export type ServiceEntryPaymentMethod = "cash" | "card" | "online" | "other";
 
 type ServiceEntryFormProps = {
   action: (state: ServiceEntryFormState, formData: FormData) => Promise<ServiceEntryFormState>;
@@ -125,6 +125,7 @@ export function ServiceEntryForm({
           <option value="cash">Cash</option>
           <option value="card">Card</option>
           <option value="online">Online</option>
+          <option value="other">Other</option>
         </select>
       </label>
 

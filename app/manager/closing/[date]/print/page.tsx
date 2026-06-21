@@ -121,7 +121,42 @@ export default async function ManagerClosingPrintPage({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 print:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 print:grid-cols-4">
+            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Cash sales
+              </p>
+              <p className="mt-2 text-xl font-semibold">
+                {formatMoney(summary.cashSales)}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Card sales
+              </p>
+              <p className="mt-2 text-xl font-semibold">
+                {formatMoney(summary.cardSales)}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Online sales
+              </p>
+              <p className="mt-2 text-xl font-semibold">
+                {formatMoney(summary.onlineSales)}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Other sales
+              </p>
+              <p className="mt-2 text-xl font-semibold">
+                {formatMoney(summary.otherSales)}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 print:grid-cols-4">
             <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Total approved sales
@@ -146,48 +181,17 @@ export default async function ManagerClosingPrintPage({
                 {formatMoney(summary.netBalance)}
               </p>
             </article>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 print:grid-cols-4">
             <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Cash total
-              </p>
-              <p className="mt-2 text-xl font-semibold">{formatMoney(summary.cashTotal)}</p>
-            </article>
-            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Card total
-              </p>
-              <p className="mt-2 text-xl font-semibold">{formatMoney(summary.cardTotal)}</p>
-            </article>
-            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Online total
+                Cash in hand
               </p>
               <p className="mt-2 text-xl font-semibold">
-                {formatMoney(summary.onlineTotal)}
-              </p>
-            </article>
-            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Cash expense total
-              </p>
-              <p className="mt-2 text-xl font-semibold">
-                {formatMoney(summary.cashExpenseTotal)}
+                {formatMoney(summary.cashInHand)}
               </p>
             </article>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 print:grid-cols-3">
-            <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Expected cash
-              </p>
-              <p className="mt-2 text-xl font-semibold">
-                {formatMoney(summary.expectedCash)}
-              </p>
-            </article>
             <article className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 print:bg-white">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Actual cash

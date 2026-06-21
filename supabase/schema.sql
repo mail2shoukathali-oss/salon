@@ -43,7 +43,7 @@ create table if not exists public.service_entries (
   customer_name text,
   customer_phone text,
   amount numeric(12,2) not null check (amount >= 0),
-  payment_method text not null check (payment_method in ('cash', 'card', 'online')),
+  payment_method text not null check (payment_method in ('cash', 'card', 'online', 'other')),
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   notes text,
   reviewed_by uuid references public.profiles (id) on delete set null,
@@ -63,7 +63,7 @@ create table if not exists public.expenses (
   expense_date date not null default current_date,
   category text not null,
   amount numeric(12,2) not null check (amount >= 0),
-  payment_method text not null check (payment_method in ('cash', 'card', 'online')),
+  payment_method text not null check (payment_method in ('cash', 'card', 'online', 'other')),
   notes text,
   created_at timestamptz not null default now()
 );
@@ -72,7 +72,7 @@ comment on table public.expenses is 'Operational expenses recorded by managers.'
 
 -- Daily closing does not calculate or deduct commission.
 -- net_balance = total_approved_sales - total_expenses.
--- cash_total, card_total, and online_total reflect approved sales by payment method.
+-- cash_total, card_total, online_total, and other_sales reflect approved sales by payment method.
 create table if not exists public.daily_closings (
   id uuid primary key default gen_random_uuid(),
   closing_date date not null unique,
@@ -83,6 +83,8 @@ create table if not exists public.daily_closings (
   cash_total numeric(12,2) not null default 0 check (cash_total >= 0),
   card_total numeric(12,2) not null default 0 check (card_total >= 0),
   online_total numeric(12,2) not null default 0 check (online_total >= 0),
+  other_sales numeric(12,2) not null default 0 check (other_sales >= 0),
+  cash_in_hand numeric(12,2) not null default 0,
   actual_cash numeric(12,2) not null default 0,
   cash_difference numeric(12,2) not null default 0,
   notes text,

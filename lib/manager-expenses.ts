@@ -6,7 +6,7 @@ export type ExpenseRow = {
   title: string;
   category: string;
   amount: number;
-  payment_method: "cash" | "card" | "online";
+  payment_method: "cash" | "card" | "online" | "other";
   expense_date: string;
   notes: string | null;
 };
@@ -21,7 +21,7 @@ export type ExpenseActivitySnapshot = {
   title: string;
   category: string;
   amount: number;
-  payment_method: "cash" | "card" | "online";
+  payment_method: "cash" | "card" | "online" | "other";
   expense_date: string;
   notes: string | null;
 };
@@ -97,7 +97,7 @@ export async function updateManagerExpense(
     title: string;
     category: string;
     amount: number;
-    paymentMethod: "cash" | "card" | "online";
+    paymentMethod: "cash" | "card" | "online" | "other";
     expenseDate: string;
     notes: string | null;
   },

@@ -74,8 +74,8 @@ export default async function ManagerExpenseEditPage({
       return { error: "Amount must be greater than 0." };
     }
 
-    if (!["cash", "card", "online"].includes(paymentMethod)) {
-      return { error: "Payment method must be cash, card, or online." };
+    if (!["cash", "card", "online", "other"].includes(paymentMethod)) {
+      return { error: "Payment method must be cash, card, online, or other." };
     }
 
     if (!expenseDate) {
@@ -86,7 +86,7 @@ export default async function ManagerExpenseEditPage({
       title,
       category,
       amount,
-      paymentMethod: paymentMethod as "cash" | "card" | "online",
+      paymentMethod: paymentMethod as "cash" | "card" | "online" | "other",
       expenseDate,
       notes: notes || null,
     });

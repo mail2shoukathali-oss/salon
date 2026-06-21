@@ -4,7 +4,7 @@ export type ManagerClosingEntry = {
   id: string;
   service_name: string;
   amount: number;
-  payment_method: "cash" | "card" | "online";
+  payment_method: string | null;
   customer_name: string | null;
   service_date: string;
 };
@@ -13,7 +13,7 @@ export type ManagerClosingExpense = {
   id: string;
   title: string;
   amount: number;
-  payment_method: "cash" | "card" | "online";
+  payment_method: string | null;
   expense_date: string;
   notes: string | null;
 };
@@ -28,6 +28,8 @@ export type DailyClosingRecord = {
   cash_total: number;
   card_total: number;
   online_total: number;
+  other_sales: number;
+  cash_in_hand: number;
   actual_cash: number;
   cash_difference: number;
   notes: string | null;
@@ -44,6 +46,8 @@ export type DailyClosingActivitySnapshot = {
   cash_total: number;
   card_total: number;
   online_total: number;
+  other_sales: number;
+  cash_in_hand: number;
   actual_cash: number;
   cash_difference: number;
   notes: string | null;
@@ -54,11 +58,12 @@ export type ManagerClosingSummary = {
   totalApprovedSales: number;
   totalExpenses: number;
   netBalance: number;
-  cashTotal: number;
-  cardTotal: number;
-  onlineTotal: number;
+  cashSales: number;
+  cardSales: number;
+  onlineSales: number;
+  otherSales: number;
   cashExpenseTotal: number;
-  expectedCash: number;
+  cashInHand: number;
   actualCash: number;
   cashDifference: number;
 };
@@ -79,41 +84,47 @@ export function calculateManagerClosingSummary(input: {
   actualCash?: number;
 }): ManagerClosingSummary {
   const approvedEntries = input.entries;
-  const cashTotal = sum(
+  const cashSales = sum(
     approvedEntries
       .filter((entry) => entry.payment_method === "cash")
       .map((entry) => Number(entry.amount)),
   );
-  const cardTotal = sum(
+  const cardSales = sum(
     approvedEntries
       .filter((entry) => entry.payment_method === "card")
       .map((entry) => Number(entry.amount)),
   );
-  const onlineTotal = sum(
+  const onlineSales = sum(
     approvedEntries
       .filter((entry) => entry.payment_method === "online")
       .map((entry) => Number(entry.amount)),
   );
-  const totalApprovedSales = cashTotal + cardTotal + onlineTotal;
+  const otherSales = sum(
+    approvedEntries
+      .filter((entry) => entry.payment_method === "other")
+      .map((entry) => Number(entry.amount)),
+  );
+  const totalApprovedSales = cashSales + cardSales + onlineSales + otherSales;
   const totalExpenses = sum(input.expenses.map((expense) => Number(expense.amount)));
   const cashExpenseTotal = sum(
     input.expenses
       .filter((expense) => expense.payment_method === "cash")
       .map((expense) => Number(expense.amount)),
   );
-  const expectedCash = cashTotal - cashExpenseTotal;
+  const cashInHand = cashSales - cashExpenseTotal;
   const actualCash = input.actualCash ?? 0;
-  const cashDifference = actualCash - expectedCash;
+  const cashDifference = actualCash - cashInHand;
 
   return {
     totalApprovedSales,
     totalExpenses,
     netBalance: totalApprovedSales - totalExpenses,
-    cashTotal,
-    cardTotal,
-    onlineTotal,
+    cashSales,
+    cardSales,
+    onlineSales,
+    otherSales,
     cashExpenseTotal,
-    expectedCash,
+    cashInHand,
     actualCash,
     cashDifference,
   };
@@ -140,7 +151,7 @@ export async function getManagerClosingSnapshot(date: string) {
     supabase
       .from("daily_closings")
       .select(
-        "id, closing_date, manager_id, total_approved_sales, total_expenses, net_balance, cash_total, card_total, online_total, actual_cash, cash_difference, notes, created_at",
+        "id, closing_date, manager_id, total_approved_sales, total_expenses, net_balance, cash_total, card_total, online_total, other_sales, cash_in_hand, actual_cash, cash_difference, notes, created_at",
       )
       .eq("closing_date", date)
       .maybeSingle(),
@@ -175,7 +186,7 @@ export async function getRecentManagerClosings(limit = 10) {
   const { data, error } = await supabase
     .from("daily_closings")
     .select(
-      "id, closing_date, total_approved_sales, total_expenses, net_balance, actual_cash, cash_difference",
+      "id, closing_date, total_approved_sales, total_expenses, net_balance, cash_in_hand, actual_cash, cash_difference",
     )
     .order("closing_date", { ascending: false })
     .limit(limit);
@@ -190,6 +201,7 @@ export async function getRecentManagerClosings(limit = 10) {
     total_approved_sales: number;
     total_expenses: number;
     net_balance: number;
+    cash_in_hand: number;
     actual_cash: number;
     cash_difference: number;
   }>;
@@ -218,9 +230,11 @@ export async function saveManagerDailyClosing(input: {
         total_approved_sales: summary.totalApprovedSales,
         total_expenses: summary.totalExpenses,
         net_balance: summary.netBalance,
-        cash_total: summary.cashTotal,
-        card_total: summary.cardTotal,
-        online_total: summary.onlineTotal,
+        cash_total: summary.cashSales,
+        card_total: summary.cardSales,
+        online_total: summary.onlineSales,
+        other_sales: summary.otherSales,
+        cash_in_hand: summary.cashInHand,
         actual_cash: summary.actualCash,
         cash_difference: summary.cashDifference,
         notes: input.notes,
@@ -228,7 +242,7 @@ export async function saveManagerDailyClosing(input: {
       { onConflict: "closing_date" },
     )
     .select(
-      "id, closing_date, manager_id, total_approved_sales, total_expenses, net_balance, cash_total, card_total, online_total, actual_cash, cash_difference, notes, created_at",
+      "id, closing_date, manager_id, total_approved_sales, total_expenses, net_balance, cash_total, card_total, online_total, other_sales, cash_in_hand, actual_cash, cash_difference, notes, created_at",
     )
     .maybeSingle();
 }
@@ -250,6 +264,8 @@ export function buildDailyClosingActivitySnapshot(
     cash_total: Number(closing.cash_total),
     card_total: Number(closing.card_total),
     online_total: Number(closing.online_total),
+    other_sales: Number(closing.other_sales),
+    cash_in_hand: Number(closing.cash_in_hand),
     actual_cash: Number(closing.actual_cash),
     cash_difference: Number(closing.cash_difference),
     notes: closing.notes,

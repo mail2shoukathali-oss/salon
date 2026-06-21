@@ -85,6 +85,8 @@ export default async function ManagerClosingDetailPage({
           cash_total: Number(data.cash_total),
           card_total: Number(data.card_total),
           online_total: Number(data.online_total),
+          other_sales: Number(data.other_sales),
+          cash_in_hand: Number(data.cash_in_hand),
           actual_cash: Number(data.actual_cash),
           cash_difference: Number(data.cash_difference),
           notes: data.notes,
@@ -107,11 +109,12 @@ export default async function ManagerClosingDetailPage({
         total_approved_sales: summary.totalApprovedSales,
         total_expenses: summary.totalExpenses,
         net_balance: summary.netBalance,
-        cash_total: summary.cashTotal,
-        card_total: summary.cardTotal,
-        online_total: summary.onlineTotal,
+        cash_sales: summary.cashSales,
+        card_sales: summary.cardSales,
+        online_sales: summary.onlineSales,
+        other_sales: summary.otherSales,
+        cash_in_hand: summary.cashInHand,
         actual_cash: summary.actualCash,
-        expected_cash: summary.expectedCash,
         cash_difference: summary.cashDifference,
       },
     });
@@ -143,13 +146,40 @@ export default async function ManagerClosingDetailPage({
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Approved sales</p>
+          <p className="text-sm font-medium text-zinc-500">Cash sales</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight">
+            {formatMoney(summary.cashSales)}
+          </p>
+        </article>
+        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-zinc-500">Card sales</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight">
+            {formatMoney(summary.cardSales)}
+          </p>
+        </article>
+        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-zinc-500">Online sales</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight">
+            {formatMoney(summary.onlineSales)}
+          </p>
+        </article>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-zinc-500">Other sales</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight">
+            {formatMoney(summary.otherSales)}
+          </p>
+        </article>
+        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-zinc-500">Total approved sales</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight">
             {formatMoney(summary.totalApprovedSales)}
           </p>
         </article>
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Expenses</p>
+          <p className="text-sm font-medium text-zinc-500">Total expenses</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight">
             {formatMoney(summary.totalExpenses)}
           </p>
@@ -164,36 +194,21 @@ export default async function ManagerClosingDetailPage({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Cash total</p>
+          <p className="text-sm font-medium text-zinc-500">Cash in hand</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight">
-            {formatMoney(summary.cashTotal)}
+            {formatMoney(summary.cashInHand)}
           </p>
         </article>
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Card total</p>
+          <p className="text-sm font-medium text-zinc-500">Actual cash</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight">
-            {formatMoney(summary.cardTotal)}
+            {formatMoney(summary.actualCash)}
           </p>
         </article>
         <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Online total</p>
+          <p className="text-sm font-medium text-zinc-500">Cash difference</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight">
-            {formatMoney(summary.onlineTotal)}
-          </p>
-        </article>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Cash expenses</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight">
-            {formatMoney(summary.cashExpenseTotal)}
-          </p>
-        </article>
-        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Expected cash</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight">
-            {formatMoney(summary.expectedCash)}
+            {formatMoney(summary.cashDifference)}
           </p>
         </article>
       </div>

@@ -100,6 +100,12 @@ export default async function ManagerClosingPage() {
                 </span>
               </div>
               <div>
+                <span className="block text-zinc-500">Cash in hand</span>
+                <span className="font-medium">
+                  {formatMoney(Number(closing.cash_in_hand ?? 0))}
+                </span>
+              </div>
+              <div>
                 <span className="block text-zinc-500">Actual cash</span>
                 <span className="font-medium">
                   {formatMoney(Number(closing.actual_cash))}

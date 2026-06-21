@@ -12,7 +12,7 @@ type ExpenseFormProps = {
   defaultTitle?: string;
   defaultCategory?: string;
   defaultAmount?: string;
-  defaultPaymentMethod?: "cash" | "card" | "online";
+  defaultPaymentMethod?: "cash" | "card" | "online" | "other";
   defaultExpenseDate?: string;
   defaultNotes?: string;
 };
@@ -92,6 +92,7 @@ export function ExpenseForm({
           <option value="cash">Cash</option>
           <option value="card">Card</option>
           <option value="online">Online</option>
+          <option value="other">Other</option>
         </select>
       </label>
 
