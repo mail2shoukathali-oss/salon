@@ -19,6 +19,11 @@ export type ActivityLogAction =
   | "service_created"
   | "service_updated";
 
+export type ActivityLogActionOption = {
+  value: ActivityLogAction;
+  label: string;
+};
+
 export type ActivityLogEntityType =
   | "service_entry"
   | "expense"
@@ -29,6 +34,11 @@ export type ActivityLogEntityType =
   | "service"
   | "report"
   | "other";
+
+export type ActivityLogEntityTypeOption = {
+  value: ActivityLogEntityType;
+  label: string;
+};
 
 export type ActivityLogRow = {
   id: string;
@@ -46,6 +56,12 @@ export type ActivityLogRow = {
   after_data: Record<string, unknown> | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
+};
+
+export type ActivityLogMetadataSummary = {
+  amount?: string;
+  finalPayable?: string;
+  status?: string;
 };
 
 export type ActivityLogFilters = {
@@ -72,6 +88,50 @@ export type RecordActivityLogInput = {
 };
 
 type ActivityLogQueryRow = ActivityLogRow;
+
+export const activityLogActionOptions: ActivityLogActionOption[] = [
+  { value: "staff_entry_created", label: getActivityLogActionLabel("staff_entry_created") },
+  { value: "staff_entry_updated", label: getActivityLogActionLabel("staff_entry_updated") },
+  { value: "staff_entry_deleted", label: getActivityLogActionLabel("staff_entry_deleted") },
+  { value: "entry_approved", label: getActivityLogActionLabel("entry_approved") },
+  { value: "entry_rejected", label: getActivityLogActionLabel("entry_rejected") },
+  { value: "expense_created", label: getActivityLogActionLabel("expense_created") },
+  { value: "expense_updated", label: getActivityLogActionLabel("expense_updated") },
+  { value: "expense_deleted", label: getActivityLogActionLabel("expense_deleted") },
+  { value: "daily_closing_saved", label: getActivityLogActionLabel("daily_closing_saved") },
+  { value: "payouts_generated", label: getActivityLogActionLabel("payouts_generated") },
+  { value: "payout_adjusted", label: getActivityLogActionLabel("payout_adjusted") },
+  { value: "payout_marked_paid", label: getActivityLogActionLabel("payout_marked_paid") },
+  {
+    value: "business_settings_updated",
+    label: getActivityLogActionLabel("business_settings_updated"),
+  },
+  {
+    value: "staff_profile_created",
+    label: getActivityLogActionLabel("staff_profile_created"),
+  },
+  {
+    value: "staff_profile_updated",
+    label: getActivityLogActionLabel("staff_profile_updated"),
+  },
+  { value: "service_created", label: getActivityLogActionLabel("service_created") },
+  { value: "service_updated", label: getActivityLogActionLabel("service_updated") },
+];
+
+export const activityLogEntityTypeOptions: ActivityLogEntityTypeOption[] = [
+  { value: "service_entry", label: getActivityLogEntityLabel("service_entry") },
+  { value: "expense", label: getActivityLogEntityLabel("expense") },
+  { value: "daily_closing", label: getActivityLogEntityLabel("daily_closing") },
+  { value: "monthly_payout", label: getActivityLogEntityLabel("monthly_payout") },
+  {
+    value: "business_settings",
+    label: getActivityLogEntityLabel("business_settings"),
+  },
+  { value: "staff_profile", label: getActivityLogEntityLabel("staff_profile") },
+  { value: "service", label: getActivityLogEntityLabel("service") },
+  { value: "report", label: getActivityLogEntityLabel("report") },
+  { value: "other", label: getActivityLogEntityLabel("other") },
+];
 
 export function getActivityLogActionLabel(action: string) {
   const labels: Record<string, string> = {
@@ -111,6 +171,34 @@ export function getActivityLogEntityLabel(entityType: string) {
   };
 
   return labels[entityType] ?? prettifyLabel(entityType);
+}
+
+export function getActivityLogMetadataSummary(
+  metadata: Record<string, unknown> | null,
+): ActivityLogMetadataSummary {
+  if (!metadata) {
+    return {};
+  }
+
+  const amount = metadata.amount;
+  const finalPayable = metadata.final_payable ?? metadata.finalPayable;
+  const status = metadata.status;
+
+  return {
+    amount:
+      typeof amount === "number"
+        ? `AED ${amount.toFixed(2)}`
+        : typeof amount === "string" && amount.trim()
+          ? amount
+          : undefined,
+    finalPayable:
+      typeof finalPayable === "number"
+        ? `AED ${finalPayable.toFixed(2)}`
+        : typeof finalPayable === "string" && finalPayable.trim()
+          ? finalPayable
+          : undefined,
+    status: typeof status === "string" && status.trim() ? prettifyLabel(status) : undefined,
+  };
 }
 
 function prettifyLabel(value: string) {
@@ -183,4 +271,3 @@ export async function getActivityLogs(filters: ActivityLogFilters = {}) {
 
   return (data ?? []) as ActivityLogQueryRow[];
 }
-

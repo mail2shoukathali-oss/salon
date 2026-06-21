@@ -2,8 +2,11 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { requireOwnerOrManagerAccess } from "@/lib/auth/access";
 import {
+  activityLogActionOptions,
+  activityLogEntityTypeOptions,
   getActivityLogActionLabel,
   getActivityLogEntityLabel,
+  getActivityLogMetadataSummary,
   type ActivityLogRow,
   getActivityLogs,
 } from "@/lib/activity-log";
@@ -31,6 +34,14 @@ function formatBusinessDate(value: string | null) {
   }).format(new Date(`${value}T00:00:00Z`));
 }
 
+function formatPeriod(year: number, month: number) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
 function prettifyValue(value: string) {
   return value
     .split(/[_-]+/g)
@@ -53,8 +64,15 @@ export default async function ManagerActivityPage({
     await searchParams;
 
   const selectedDate = isIsoDate(dateParam) ? dateParam : "";
-  const selectedAction = actionParam?.trim() ?? "";
-  const selectedEntityType = entityTypeParam?.trim() ?? "";
+  const selectedAction =
+    actionParam && activityLogActionOptions.some((option) => option.value === actionParam)
+      ? actionParam
+      : "";
+  const selectedEntityType =
+    entityTypeParam &&
+    activityLogEntityTypeOptions.some((option) => option.value === entityTypeParam)
+      ? entityTypeParam
+      : "";
 
   let logs: ActivityLogRow[] = [];
   let loadError: string | null = null;
@@ -90,7 +108,10 @@ export default async function ManagerActivityPage({
       description="Read-only audit history for important salon actions."
     >
       <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <form method="get" className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+        <form
+          method="get"
+          className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end"
+        >
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-zinc-700">Date</span>
             <input
@@ -103,26 +124,36 @@ export default async function ManagerActivityPage({
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-zinc-700">Action</span>
-            <input
-              type="text"
+            <select
               name="action"
               defaultValue={selectedAction}
-              placeholder="e.g. expense_created"
               className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
-            />
+            >
+              <option value="">All actions</option>
+              {activityLogActionOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-zinc-700">
               Entity type
             </span>
-            <input
-              type="text"
+            <select
               name="entityType"
               defaultValue={selectedEntityType}
-              placeholder="e.g. expense"
               className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-400"
-            />
+            >
+              <option value="">All entity types</option>
+              {activityLogEntityTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <div className="flex flex-wrap gap-2">
@@ -157,8 +188,9 @@ export default async function ManagerActivityPage({
               const businessDate = formatBusinessDate(log.business_date);
               const period =
                 log.period_year && log.period_month
-                  ? `${log.period_month.toString().padStart(2, "0")}/${log.period_year}`
+                  ? formatPeriod(log.period_year, log.period_month)
                   : null;
+              const metadataSummary = getActivityLogMetadataSummary(log.metadata);
 
               return (
                 <article
@@ -171,27 +203,17 @@ export default async function ManagerActivityPage({
                         {getActivityLogActionLabel(log.action)}
                       </h2>
                       <p className="mt-1 text-sm text-zinc-600">
-                        {formatDateTime(log.created_at)}
+                        {log.actor_name} · {formatRole(log.actor_role)}
                       </p>
                     </div>
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium uppercase tracking-wide text-zinc-700">
-                      {formatRole(log.actor_role)}
+                      {getActivityLogEntityLabel(log.entity_type)}
                     </span>
                   </div>
 
                   <div className="mt-4 grid gap-3 text-sm text-zinc-700 sm:grid-cols-2 xl:grid-cols-4">
                     <div>
-                      <span className="block text-zinc-500">Actor</span>
-                      <span className="font-medium">{log.actor_name}</span>
-                    </div>
-                    <div>
                       <span className="block text-zinc-500">Entity</span>
-                      <span className="font-medium">
-                        {getActivityLogEntityLabel(log.entity_type)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-zinc-500">Target</span>
                       <span className="font-medium">
                         {log.entity_label || log.entity_id}
                       </span>
@@ -213,6 +235,33 @@ export default async function ManagerActivityPage({
                       </div>
                     ) : null}
                   </div>
+
+                  {metadataSummary.amount ||
+                  metadataSummary.finalPayable ||
+                  metadataSummary.status ? (
+                    <div className="mt-4 grid gap-3 text-sm text-zinc-700 sm:grid-cols-3">
+                      {metadataSummary.amount ? (
+                        <div>
+                          <span className="block text-zinc-500">Amount</span>
+                          <span className="font-medium">{metadataSummary.amount}</span>
+                        </div>
+                      ) : null}
+                      {metadataSummary.finalPayable ? (
+                        <div>
+                          <span className="block text-zinc-500">Final payable</span>
+                          <span className="font-medium">
+                            {metadataSummary.finalPayable}
+                          </span>
+                        </div>
+                      ) : null}
+                      {metadataSummary.status ? (
+                        <div>
+                          <span className="block text-zinc-500">Status</span>
+                          <span className="font-medium">{metadataSummary.status}</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </article>
               );
             })}
