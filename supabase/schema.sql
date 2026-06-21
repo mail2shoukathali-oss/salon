@@ -286,7 +286,7 @@ for update
 using (public.is_owner_or_manager())
 with check (public.is_owner_or_manager());
 
--- service_entries: staff can create and read their own entries; managers can review them.
+-- service_entries: staff can create, read, and update their own pending entries; managers can review them.
 create policy service_entries_owner_all
 on public.service_entries
 for all
@@ -309,6 +309,20 @@ create policy service_entries_staff_insert_own
 on public.service_entries
 for insert
 with check (staff_id = auth.uid());
+
+-- Required for staff pending entry edits to persist in Staff Today.
+create policy "Staff can update own pending entries"
+on public.service_entries
+for update
+to authenticated
+using (
+  staff_id = auth.uid()
+  and status = 'pending'
+)
+with check (
+  staff_id = auth.uid()
+  and status = 'pending'
+);
 
 create policy service_entries_staff_select_own
 on public.service_entries
