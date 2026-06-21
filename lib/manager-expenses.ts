@@ -15,6 +15,35 @@ export type ExpenseDetailRow = ExpenseRow & {
   created_at: string;
 };
 
+export type ExpenseActivitySnapshot = {
+  id: string;
+  manager_id: string;
+  title: string;
+  category: string;
+  amount: number;
+  payment_method: "cash" | "card" | "online";
+  expense_date: string;
+  notes: string | null;
+};
+
+export function buildExpenseActivitySnapshot(
+  expense: Pick<
+    ExpenseDetailRow,
+    "id" | "manager_id" | "title" | "category" | "amount" | "payment_method" | "expense_date" | "notes"
+  >,
+): ExpenseActivitySnapshot {
+  return {
+    id: expense.id,
+    manager_id: expense.manager_id,
+    title: expense.title,
+    category: expense.category,
+    amount: Number(expense.amount),
+    payment_method: expense.payment_method,
+    expense_date: expense.expense_date,
+    notes: expense.notes ?? null,
+  };
+}
+
 export async function getManagerExpenses(date?: string) {
   const supabase = await createSupabaseServerClient();
   let query = supabase

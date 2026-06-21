@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { ExpenseForm, type ExpenseFormState } from "@/components/ExpenseForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { requireManagerAccess } from "@/lib/auth/access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -59,7 +60,9 @@ export default async function ManagerNewExpensePage() {
     }
 
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.from("expenses").insert({
+    const { data, error } = await supabase
+      .from("expenses")
+      .insert({
       manager_id: currentUser.id,
       title,
       category,
@@ -67,10 +70,41 @@ export default async function ManagerNewExpensePage() {
       payment_method: paymentMethod,
       expense_date: expenseDate,
       notes: notes || null,
-    });
+      })
+      .select("id, manager_id, title, category, amount, payment_method, expense_date, notes")
+      .maybeSingle();
 
     if (error) {
       return { error: error.message };
+    }
+
+    if (data) {
+      await recordActivityLog({
+        actorId: currentProfile.id,
+        actorName: currentProfile.full_name || "Unknown user",
+        actorRole: currentProfile.role,
+        action: "expense_created",
+        entityType: "expense",
+        entityId: data.id,
+        entityLabel: data.title,
+        businessDate: data.expense_date,
+        beforeData: null,
+        afterData: {
+          id: data.id,
+          manager_id: data.manager_id,
+          title: data.title,
+          category: data.category,
+          amount: Number(data.amount),
+          payment_method: data.payment_method,
+          expense_date: data.expense_date,
+          notes: data.notes ?? null,
+        },
+        metadata: {
+          amount: Number(data.amount),
+          category: data.category,
+          payment_method: data.payment_method,
+        },
+      });
     }
 
     revalidatePath("/manager/expenses");

@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { ExpenseForm, type ExpenseFormState } from "@/components/ExpenseForm";
 import { ExpenseDeleteForm, type ExpenseDeleteFormState } from "@/components/ExpenseDeleteForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { requireManagerAccess } from "@/lib/auth/access";
 import {
+  buildExpenseActivitySnapshot,
   deleteManagerExpense,
   getManagerExpenseById,
   updateManagerExpense,
@@ -93,6 +95,33 @@ export default async function ManagerExpenseEditPage({
       return { error: error.message };
     }
 
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "expense_updated",
+      entityType: "expense",
+      entityId: expenseRecord.id,
+      entityLabel: title,
+      businessDate: expenseDate,
+      beforeData: buildExpenseActivitySnapshot(expenseRecord),
+      afterData: {
+        id: expenseRecord.id,
+        manager_id: expenseRecord.manager_id,
+        title,
+        category,
+        amount,
+        payment_method: paymentMethod,
+        expense_date: expenseDate,
+        notes: notes || null,
+      },
+      metadata: {
+        amount,
+        category,
+        payment_method: paymentMethod,
+      },
+    });
+
     revalidatePath("/manager/expenses");
     revalidatePath("/manager/closing");
     revalidatePath(`/manager/closing/${expenseRecord.expense_date}`);
@@ -124,6 +153,24 @@ export default async function ManagerExpenseEditPage({
     if (!data) {
       return { error: "Expense record was not deleted." };
     }
+
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "expense_deleted",
+      entityType: "expense",
+      entityId: expenseRecord.id,
+      entityLabel: expenseRecord.title,
+      businessDate: expenseRecord.expense_date,
+      beforeData: buildExpenseActivitySnapshot(expenseRecord),
+      afterData: null,
+      metadata: {
+        amount: Number(expenseRecord.amount),
+        category: expenseRecord.category,
+        payment_method: expenseRecord.payment_method,
+      },
+    });
 
     revalidatePath("/manager/expenses");
     revalidatePath("/manager/closing");
