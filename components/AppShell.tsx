@@ -46,6 +46,7 @@ const navigation: Record<UserRole, NavSection[] | ShellNavItem[]> = {
       items: [
         { href: "/manager/reports/staff-daily", label: "Staff Report" },
         { href: "/manager/reports/staff-monthly", label: "Monthly Report" },
+        { href: "/manager/activity", label: "Activity" },
         { href: "/owner/payouts", label: "Payouts" },
       ],
     },
@@ -79,6 +80,7 @@ const navigation: Record<UserRole, NavSection[] | ShellNavItem[]> = {
       items: [
         { href: "/manager/reports/staff-daily", label: "Staff Report" },
         { href: "/manager/reports/staff-monthly", label: "Monthly Report" },
+        { href: "/manager/activity", label: "Activity" },
         { href: "/owner/payouts", label: "Payouts" },
       ],
     },
