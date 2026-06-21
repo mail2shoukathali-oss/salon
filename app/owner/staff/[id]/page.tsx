@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { StaffProfileForm, type StaffProfileFormState } from "@/components/StaffProfileForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { requireOwnerAccess } from "@/lib/auth/access";
 import {
+  buildStaffProfileActivitySnapshot,
   getStaffProfileErrorMessage,
   parseStaffProfileFormData,
 } from "@/lib/owner-staff";
@@ -47,7 +49,7 @@ export default async function OwnerStaffEditPage({ params }: PageParams) {
   ): Promise<StaffProfileFormState> {
     "use server";
 
-    await requireOwnerAccess();
+    const { profile: currentProfile } = await requireOwnerAccess();
 
     const parsed = parseStaffProfileFormData(formData, { includeId: true });
     if ("error" in parsed) {
@@ -57,6 +59,15 @@ export default async function OwnerStaffEditPage({ params }: PageParams) {
     if (parsed.values.id !== staffProfile.id) {
       return { error: "Profile ID does not match the record being edited." };
     }
+
+    const beforeSnapshot = buildStaffProfileActivitySnapshot({
+      id: staffProfile.id,
+      full_name: staffProfile.full_name ?? "",
+      phone: staffProfile.phone ?? null,
+      role: staffProfile.role,
+      status: staffProfile.status,
+      commission_percentage: staffProfile.commission_percentage,
+    });
 
     const updateClient = await createSupabaseServerClient();
     const { error: updateError } = await updateClient
@@ -73,6 +84,30 @@ export default async function OwnerStaffEditPage({ params }: PageParams) {
     if (updateError) {
       return { error: getStaffProfileErrorMessage(updateError) };
     }
+
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "staff_profile_updated",
+      entityType: "staff_profile",
+      entityId: staffProfile.id,
+      entityLabel: parsed.values.full_name,
+      beforeData: beforeSnapshot,
+      afterData: buildStaffProfileActivitySnapshot({
+        id: staffProfile.id,
+        full_name: parsed.values.full_name,
+        phone: parsed.values.phone || null,
+        role: parsed.values.role,
+        status: parsed.values.status,
+        commission_percentage: parsed.values.commission_percentage,
+      }),
+      metadata: {
+        role: parsed.values.role,
+        status: parsed.values.status,
+        commission_percentage: parsed.values.commission_percentage,
+      },
+    });
 
     revalidatePath("/owner/staff");
     revalidatePath(`/owner/staff/${staffProfile.id}`);

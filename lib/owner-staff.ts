@@ -11,6 +11,15 @@ export type StaffProfileFormValues = {
   commission_percentage: number;
 };
 
+export type StaffProfileActivitySnapshot = {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  role: UserRole;
+  status: StaffStatus;
+  commission_percentage: number;
+};
+
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -79,4 +88,17 @@ export function getStaffProfileErrorMessage(error: {
   }
 
   return error.message || "Something went wrong while saving the profile.";
+}
+
+export function buildStaffProfileActivitySnapshot(
+  input: StaffProfileActivitySnapshot,
+): StaffProfileActivitySnapshot {
+  return {
+    id: input.id,
+    full_name: input.full_name,
+    phone: input.phone,
+    role: input.role,
+    status: input.status,
+    commission_percentage: Number(input.commission_percentage),
+  };
 }

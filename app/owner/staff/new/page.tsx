@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { StaffProfileForm, type StaffProfileFormState } from "@/components/StaffProfileForm";
+import { recordActivityLog } from "@/lib/activity-log";
 import { requireOwnerAccess } from "@/lib/auth/access";
 import {
+  buildStaffProfileActivitySnapshot,
   getStaffProfileErrorMessage,
   parseStaffProfileFormData,
 } from "@/lib/owner-staff";
@@ -18,7 +20,7 @@ export default async function OwnerStaffNewPage() {
   ): Promise<StaffProfileFormState> {
     "use server";
 
-    await requireOwnerAccess();
+    const { profile: currentProfile } = await requireOwnerAccess();
 
     const parsed = parseStaffProfileFormData(formData, { includeId: true });
     if ("error" in parsed) {
@@ -38,6 +40,30 @@ export default async function OwnerStaffNewPage() {
     if (error) {
       return { error: getStaffProfileErrorMessage(error) };
     }
+
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "staff_profile_created",
+      entityType: "staff_profile",
+      entityId: parsed.values.id ?? "",
+      entityLabel: parsed.values.full_name,
+      beforeData: null,
+      afterData: buildStaffProfileActivitySnapshot({
+        id: parsed.values.id ?? "",
+        full_name: parsed.values.full_name,
+        phone: parsed.values.phone || null,
+        role: parsed.values.role,
+        status: parsed.values.status,
+        commission_percentage: parsed.values.commission_percentage,
+      }),
+      metadata: {
+        role: parsed.values.role,
+        status: parsed.values.status,
+        commission_percentage: parsed.values.commission_percentage,
+      },
+    });
 
     revalidatePath("/owner/staff");
     redirect("/owner/staff");
