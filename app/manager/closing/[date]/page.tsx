@@ -5,7 +5,9 @@ import { DailyClosingForm, type DailyClosingFormState } from "@/components/Daily
 import Link from "next/link";
 import { getCurrentUserProfile } from "@/lib/auth/profile";
 import { requireManagerAccess } from "@/lib/auth/access";
+import { recordActivityLog } from "@/lib/activity-log";
 import {
+  buildDailyClosingActivitySnapshot,
   calculateManagerClosingSummary,
   getManagerClosingSnapshot,
   saveManagerDailyClosing,
@@ -59,7 +61,9 @@ export default async function ManagerClosingDetailPage({
       return { error: "Actual cash must be 0 or greater." };
     }
 
-    const { error } = await saveManagerDailyClosing({
+    const previousClosing = buildDailyClosingActivitySnapshot(snapshot.existingClosing);
+
+    const { data, error } = await saveManagerDailyClosing({
       date,
       managerId: currentUser.id,
       actualCash,
@@ -69,6 +73,48 @@ export default async function ManagerClosingDetailPage({
     if (error) {
       return { error: error.message };
     }
+
+    const savedClosing = data
+      ? {
+          id: data.id,
+          closing_date: data.closing_date,
+          manager_id: data.manager_id,
+          total_approved_sales: Number(data.total_approved_sales),
+          total_expenses: Number(data.total_expenses),
+          net_balance: Number(data.net_balance),
+          cash_total: Number(data.cash_total),
+          card_total: Number(data.card_total),
+          online_total: Number(data.online_total),
+          actual_cash: Number(data.actual_cash),
+          cash_difference: Number(data.cash_difference),
+          notes: data.notes,
+          created_at: data.created_at,
+        }
+      : null;
+
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "daily_closing_saved",
+      entityType: "daily_closing",
+      entityId: savedClosing?.id ?? date,
+      entityLabel: `Daily closing - ${date}`,
+      businessDate: date,
+      beforeData: previousClosing,
+      afterData: savedClosing,
+      metadata: {
+        total_approved_sales: summary.totalApprovedSales,
+        total_expenses: summary.totalExpenses,
+        net_balance: summary.netBalance,
+        cash_total: summary.cashTotal,
+        card_total: summary.cardTotal,
+        online_total: summary.onlineTotal,
+        actual_cash: summary.actualCash,
+        expected_cash: summary.expectedCash,
+        cash_difference: summary.cashDifference,
+      },
+    });
 
     revalidatePath("/manager/closing");
     revalidatePath(`/manager/closing/${date}`);

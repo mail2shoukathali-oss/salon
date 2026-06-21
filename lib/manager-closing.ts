@@ -34,6 +34,22 @@ export type DailyClosingRecord = {
   created_at: string;
 };
 
+export type DailyClosingActivitySnapshot = {
+  id: string;
+  closing_date: string;
+  manager_id: string;
+  total_approved_sales: number;
+  total_expenses: number;
+  net_balance: number;
+  cash_total: number;
+  card_total: number;
+  online_total: number;
+  actual_cash: number;
+  cash_difference: number;
+  notes: string | null;
+  created_at: string;
+};
+
 export type ManagerClosingSummary = {
   totalApprovedSales: number;
   totalExpenses: number;
@@ -210,5 +226,33 @@ export async function saveManagerDailyClosing(input: {
         notes: input.notes,
       },
       { onConflict: "closing_date" },
-    );
+    )
+    .select(
+      "id, closing_date, manager_id, total_approved_sales, total_expenses, net_balance, cash_total, card_total, online_total, actual_cash, cash_difference, notes, created_at",
+    )
+    .maybeSingle();
+}
+
+export function buildDailyClosingActivitySnapshot(
+  closing: DailyClosingRecord | null,
+): DailyClosingActivitySnapshot | null {
+  if (!closing) {
+    return null;
+  }
+
+  return {
+    id: closing.id,
+    closing_date: closing.closing_date,
+    manager_id: closing.manager_id,
+    total_approved_sales: Number(closing.total_approved_sales),
+    total_expenses: Number(closing.total_expenses),
+    net_balance: Number(closing.net_balance),
+    cash_total: Number(closing.cash_total),
+    card_total: Number(closing.card_total),
+    online_total: Number(closing.online_total),
+    actual_cash: Number(closing.actual_cash),
+    cash_difference: Number(closing.cash_difference),
+    notes: closing.notes,
+    created_at: closing.created_at,
+  };
 }
