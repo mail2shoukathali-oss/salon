@@ -51,7 +51,7 @@ export async function updateStaffPendingEntry(
   input: StaffPendingEntryUpdateInput,
 ) {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { error: updateError } = await supabase
     .from("service_entries")
     .update({
       service_id: input.service_id,
@@ -64,24 +64,22 @@ export async function updateStaffPendingEntry(
     })
     .eq("id", entryId)
     .eq("staff_id", staffId)
-    .eq("status", "pending")
-    .select(
-      "id, staff_id, service_id, service_name, amount, payment_method, customer_name, customer_phone, notes, status, service_date, created_at",
-    )
-    .maybeSingle();
+    .eq("status", "pending");
 
-  if (error) {
-    return { data: null, error };
+  if (updateError) {
+    return { data: null, error: updateError };
   }
 
-  if (!data) {
+  const updatedEntry = await getStaffPendingEntryById(entryId, staffId);
+
+  if (!updatedEntry) {
     return {
       data: null,
-      error: new Error("Pending entry could not be updated."),
+      error: new Error("Pending entry was updated but could not be reloaded."),
     };
   }
 
-  return { data: data as StaffPendingEntry, error: null };
+  return { data: updatedEntry, error: null };
 }
 
 export async function deleteStaffPendingEntry(entryId: string, staffId: string) {
