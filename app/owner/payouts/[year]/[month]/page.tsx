@@ -4,11 +4,14 @@ import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
 import { PayoutAdjustmentsForm, type PayoutAdjustmentsFormState } from "@/components/PayoutAdjustmentsForm";
 import { requireOwnerAccess, requireOwnerOrManagerAccess } from "@/lib/auth/access";
+import { recordActivityLog } from "@/lib/activity-log";
 import {
   formatMonthLabel,
   generateMonthlyPayoutsForMonth,
   getMonthlyPayoutMonthData,
   markMonthlyPayoutPaid,
+  summarizeMonthlyPayoutRows,
+  buildMonthlyPayoutRowSnapshot,
   updateMonthlyPayoutAdjustments,
 } from "@/lib/owner-payouts";
 
@@ -48,8 +51,31 @@ export default async function OwnerPayoutMonthPage({
   async function generateOrUpdatePayouts() {
     "use server";
 
-    await requireOwnerAccess();
+    const { profile: currentProfile } = await requireOwnerAccess();
+    const beforeSummary = summarizeMonthlyPayoutRows(monthData.payouts);
     await generateMonthlyPayoutsForMonth(year, month);
+    try {
+      const refreshedMonthData = await getMonthlyPayoutMonthData(year, month);
+      const afterSummary = summarizeMonthlyPayoutRows(refreshedMonthData.payouts);
+
+      await recordActivityLog({
+        actorId: currentProfile.id,
+        actorName: currentProfile.full_name || "Unknown user",
+        actorRole: currentProfile.role,
+        action: "payouts_generated",
+        entityType: "monthly_payout",
+        entityId: `${year}-${String(month).padStart(2, "0")}`,
+        entityLabel: `Monthly payouts - ${year}-${String(month).padStart(2, "0")}`,
+        periodYear: year,
+        periodMonth: month,
+        beforeData: beforeSummary.payout_count > 0 ? beforeSummary : null,
+        afterData: afterSummary,
+        metadata: afterSummary,
+      });
+    } catch (error) {
+      console.error("Failed to record payout generation activity log.", error);
+    }
+
     revalidatePath("/owner/payouts");
     revalidatePath(currentPath);
     redirect(currentPath);
@@ -62,7 +88,11 @@ export default async function OwnerPayoutMonthPage({
   ): Promise<PayoutAdjustmentsFormState> {
     "use server";
 
-    await requireOwnerAccess();
+    const { profile: currentProfile } = await requireOwnerAccess();
+    const beforeMonthData = await getMonthlyPayoutMonthData(year, month);
+    const beforePayout = beforeMonthData.payouts.find(
+      (payout) => payout.payout_id === payoutId,
+    );
 
     const deductionsRaw = String(formData.get("deductions") ?? "").trim();
     const advanceRaw = String(formData.get("advance_deduction") ?? "").trim();
@@ -78,6 +108,39 @@ export default async function OwnerPayoutMonthPage({
     }
 
     await updateMonthlyPayoutAdjustments(payoutId, deductions, advanceDeduction);
+    try {
+      const refreshedMonthData = await getMonthlyPayoutMonthData(year, month);
+      const afterPayout = refreshedMonthData.payouts.find(
+        (payout) => payout.payout_id === payoutId,
+      );
+
+      if (beforePayout && afterPayout) {
+        await recordActivityLog({
+          actorId: currentProfile.id,
+          actorName: currentProfile.full_name || "Unknown user",
+          actorRole: currentProfile.role,
+          action: "payout_adjusted",
+          entityType: "monthly_payout",
+          entityId: payoutId,
+          entityLabel: afterPayout.staff_name || payoutId,
+          periodYear: year,
+          periodMonth: month,
+          beforeData: buildMonthlyPayoutRowSnapshot(beforePayout, year, month),
+          afterData: buildMonthlyPayoutRowSnapshot(afterPayout, year, month),
+          metadata: {
+            staff_id: afterPayout.staff_id,
+            total_approved_sales: afterPayout.total_approved_sales,
+            commission_amount: afterPayout.commission_amount,
+            deductions: afterPayout.deductions,
+            advance_deduction: afterPayout.advance_deduction,
+            final_payable: afterPayout.final_payable,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to record payout adjustment activity log.", error);
+    }
+
     revalidatePath("/owner/payouts");
     revalidatePath(currentPath);
     redirect(currentPath);
@@ -86,8 +149,41 @@ export default async function OwnerPayoutMonthPage({
   async function markPaid(payoutId: string) {
     "use server";
 
-    await requireOwnerAccess();
+    const { profile: currentProfile } = await requireOwnerAccess();
+    const beforeMonthData = await getMonthlyPayoutMonthData(year, month);
+    const beforePayout = beforeMonthData.payouts.find(
+      (payout) => payout.payout_id === payoutId,
+    );
     await markMonthlyPayoutPaid(payoutId);
+    try {
+      const refreshedMonthData = await getMonthlyPayoutMonthData(year, month);
+      const afterPayout = refreshedMonthData.payouts.find(
+        (payout) => payout.payout_id === payoutId,
+      );
+
+      if (beforePayout && afterPayout) {
+        await recordActivityLog({
+          actorId: currentProfile.id,
+          actorName: currentProfile.full_name || "Unknown user",
+          actorRole: currentProfile.role,
+          action: "payout_marked_paid",
+          entityType: "monthly_payout",
+          entityId: payoutId,
+          entityLabel: afterPayout.staff_name || payoutId,
+          periodYear: year,
+          periodMonth: month,
+          beforeData: buildMonthlyPayoutRowSnapshot(beforePayout, year, month),
+          afterData: buildMonthlyPayoutRowSnapshot(afterPayout, year, month),
+          metadata: {
+            staff_id: afterPayout.staff_id,
+            final_payable: afterPayout.final_payable,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to record payout payment activity log.", error);
+    }
+
     revalidatePath("/owner/payouts");
     revalidatePath(currentPath);
     redirect(currentPath);

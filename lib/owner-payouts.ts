@@ -63,6 +63,32 @@ export type MonthlyPayoutMonthData = {
   payouts: MonthlyPayoutStaffSummary[];
 };
 
+export type MonthlyPayoutSummarySnapshot = {
+  payout_count: number;
+  total_approved_sales: number;
+  total_commission_amount: number;
+  total_deductions: number;
+  total_advance_deduction: number;
+  total_final_payable: number;
+};
+
+export type MonthlyPayoutRowSnapshot = {
+  id: string;
+  staff_id: string;
+  staff_name: string | null;
+  month: number;
+  year: number;
+  total_approved_sales: number;
+  commission_percentage: number;
+  commission_amount: number;
+  deductions: number;
+  advance_deduction: number;
+  final_payable: number;
+  status: "unpaid" | "paid" | "not_generated";
+  paid_at: string | null;
+  payout_id: string | null;
+};
+
 export function formatMonthLabel(year: number, month: number) {
   return new Intl.DateTimeFormat("en", {
     month: "long",
@@ -83,6 +109,71 @@ function getMonthRange(year: number, month: number) {
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextStart = `${String(nextYear).padStart(4, "0")}-${String(nextMonth).padStart(2, "0")}-01`;
   return { start, nextStart };
+}
+
+function buildMonthlyPayoutSummarySnapshot(
+  payouts: Array<{
+    total_approved_sales: number;
+    commission_amount: number;
+    deductions: number;
+    advance_deduction: number;
+    final_payable: number;
+  }>,
+): MonthlyPayoutSummarySnapshot {
+  return payouts.reduce<MonthlyPayoutSummarySnapshot>(
+    (acc, payout) => {
+      acc.payout_count += 1;
+      acc.total_approved_sales += Number(payout.total_approved_sales);
+      acc.total_commission_amount += Number(payout.commission_amount);
+      acc.total_deductions += Number(payout.deductions);
+      acc.total_advance_deduction += Number(payout.advance_deduction);
+      acc.total_final_payable += Number(payout.final_payable);
+      return acc;
+    },
+    {
+      payout_count: 0,
+      total_approved_sales: 0,
+      total_commission_amount: 0,
+      total_deductions: 0,
+      total_advance_deduction: 0,
+      total_final_payable: 0,
+    },
+  );
+}
+
+export function summarizeMonthlyPayoutRows(
+  payouts: Array<{
+    total_approved_sales: number;
+    commission_amount: number;
+    deductions: number;
+    advance_deduction: number;
+    final_payable: number;
+  }>,
+) {
+  return buildMonthlyPayoutSummarySnapshot(payouts);
+}
+
+export function buildMonthlyPayoutRowSnapshot(
+  payout: MonthlyPayoutStaffSummary,
+  year: number,
+  month: number,
+): MonthlyPayoutRowSnapshot {
+  return {
+    id: payout.payout_id ?? payout.staff_id,
+    staff_id: payout.staff_id,
+    staff_name: payout.staff_name,
+    month,
+    year,
+    total_approved_sales: Number(payout.total_approved_sales),
+    commission_percentage: Number(payout.commission_percentage),
+    commission_amount: Number(payout.commission_amount),
+    deductions: Number(payout.deductions),
+    advance_deduction: Number(payout.advance_deduction),
+    final_payable: Number(payout.final_payable),
+    status: payout.status,
+    paid_at: payout.paid_at,
+    payout_id: payout.payout_id,
+  };
 }
 
 export async function getMonthlyPayoutsList() {
