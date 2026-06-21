@@ -6,11 +6,23 @@ export type BusinessSettings = {
   dailyClosingReportTitle: string;
 };
 
+export type BusinessSettingsSnapshot = BusinessSettings;
+
 export const defaultBusinessSettings: BusinessSettings = {
   businessName: "Nawab Salon",
   payoutStatementTitle: "Monthly Staff Payout Statement",
   dailyClosingReportTitle: "Daily Closing Report",
 };
+
+export function buildBusinessSettingsSnapshot(
+  settings: BusinessSettings,
+): BusinessSettingsSnapshot {
+  return {
+    businessName: settings.businessName,
+    payoutStatementTitle: settings.payoutStatementTitle,
+    dailyClosingReportTitle: settings.dailyClosingReportTitle,
+  };
+}
 
 function mapBusinessSettingsRow(
   row: {

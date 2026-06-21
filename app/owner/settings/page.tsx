@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AppShell } from "@/components/AppShell";
+import { recordActivityLog } from "@/lib/activity-log";
 import {
   BusinessSettingsForm,
   type BusinessSettingsFormState,
 } from "@/components/BusinessSettingsForm";
 import { requireOwnerAccess } from "@/lib/auth/access";
 import {
+  buildBusinessSettingsSnapshot,
   getBusinessSettings,
   updateBusinessSettings,
 } from "@/lib/business-settings";
@@ -21,7 +23,8 @@ export default async function OwnerSettingsPage() {
   ): Promise<BusinessSettingsFormState> {
     "use server";
 
-    await requireOwnerAccess();
+    const { profile: currentProfile } = await requireOwnerAccess();
+    const previousSettings = buildBusinessSettingsSnapshot(settings);
 
     const businessName = String(formData.get("business_name") ?? "").trim();
     const payoutStatementTitle = String(
@@ -52,6 +55,27 @@ export default async function OwnerSettingsPage() {
     if (error) {
       return { error: error.message };
     }
+
+    await recordActivityLog({
+      actorId: currentProfile.id,
+      actorName: currentProfile.full_name || "Unknown user",
+      actorRole: currentProfile.role,
+      action: "business_settings_updated",
+      entityType: "business_settings",
+      entityId: "main",
+      entityLabel: "Business settings",
+      beforeData: previousSettings,
+      afterData: {
+        businessName,
+        payoutStatementTitle,
+        dailyClosingReportTitle,
+      },
+      metadata: {
+        business_name: businessName,
+        payout_statement_title: payoutStatementTitle,
+        daily_closing_report_title: dailyClosingReportTitle,
+      },
+    });
 
     revalidatePath("/owner/settings");
     redirect("/owner/settings");
